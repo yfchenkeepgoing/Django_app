@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -31,6 +32,7 @@ ALLOWED_HOSTS = ["54.171.207.54", "localhost"]
 # Application definition
 
 INSTALLED_APPS = [
+    'game.apps.GameConfig', # 在settings.py中将写的app装进来
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -105,7 +107,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
+# TIME_ZONE = 'Asia/Shanghai' # 改为中国时区
+TIME_ZONE = 'Europe/Dublin' # 将时区更改为爱尔兰时区
 
 USE_I18N = True
 
@@ -117,7 +121,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'static') # 静态文件存储在项目目录上的哪个文件夹中
+# joint()可以将两个路径合并，我们将静态文件夹存储在BASE_DIR的static目录下，即acapp/game/static下
+# BSE_DIR在第17行定义
+# 注意原本文件没有导入os包，因此需要import os，本配置文件只需要修改一次
 STATIC_URL = '/static/'
+
+# 还有一个功能和static类似的文件夹：media，暂时用不到，先不讲，media和static都可以用来存静态文件
+# 一般在static中存开发者的文件，media中存用户的文件
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media') 
+MEDIA_URL = '/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
