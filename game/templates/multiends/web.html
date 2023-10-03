@@ -1,0 +1,30 @@
+{% load static %} <!-- 由于用到了关键字static，因此需要加上这行-->
+
+<head>
+    <!-- 需要将所有外部资源文件放入head中，本节课中用jquery，前端的工具有很多，jquery比较简单、容易上手，目前比较主流的是vue -->
+    <!-- 只需要将下面两句话（第一句是jquery的css文件，第二句话是jquery的js文件）写进html文件，就可以使用jquery的语法 -->
+    <!-- jquery就是javascript query，特点是在javascript中查询html对象写起来很短-->
+    <link rel="stylesheet" href="https://cdn.acwing.com/static/jquery-ui-dist/jquery-ui.min.css">
+    <script src="https://cdn.acwing.com/static/jquery/js/jquery-3.3.1.min.js"></script>
+
+    <!-- 将自己定义的css文件和js文件加入进来，仿照以上格式 -->
+    <link rel="stylesheet" href="{% static 'css/game.css' %}"> <!-- 在django的html文件中可以用django提供的一些工具来帮助快速查找文件 -->
+    <script src="{% static 'js/dist/game.js' %}"></script> <!-- js被打包到了dist文件夹中-->
+    <!-- 打包文件有多种工具，后面将介绍一种工具，可以帮助打包文件、压缩代码、删除注释 -->
+</head>
+
+<!-- body是主要组成部分，未来所有内容都会放入body中 -->
+<body style="margin: 0"> <!-- html中所有东西都有属性margin，其意思是页边空白，真实宽度=原本宽度+margin，margin = 0意味着当前边界就是真实边界 -->
+<!-- 不加margin: 0则边界默认会外延一小部分，会比较丑 -->
+<!-- 后面写网站具体内容，不用html，而是用js去动态渲染，因此后面调用js的api即可 -->
+    <div id="ac_game_12345678"></div> <!-- 创建游戏框架-->
+
+    <!-- 引入js代码-->
+    <!-- ac_game是对象，未来整个游戏界面都在AcGame()这个class里面 -->
+    <!-- 真实渲染界面的部分在js中，因此整个页面是前端渲染的，而非后端 -->
+    <script>
+        $(document).ready(function(){   
+            let ac_game = AcGame(ac_game_12345678);  //传自div的id
+        });
+    </script>
+</body>
