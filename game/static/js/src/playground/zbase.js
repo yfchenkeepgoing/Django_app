@@ -3,14 +3,22 @@ class AcGamePlayground {
         this.root = root; //存下root
 
         //AcGamePlayground类的html对象名为playground
-        this.$playground = $(`<div>游戏界面</div>`); //写得简单点
+        this.$playground = $(`<div class="ac-game-playground"></div>`); //写得简单点
 
         //打开网页时，应该先打开菜单界面，再打开游戏界面，因此在将playground加入总对象ac_game前应该先关掉游戏界面
-        this.hide();
+        //this.hide(); //为方便调试，打开网页时暂时先不隐藏游戏界面
 
         //将playground对象加入到总对象ac_game中
         this.root.$ac_game.append(this.$playground);
+        this.width = this.$playground.width(); //记下界面的宽度
+        this.height = this.$playground.height(); //记下界面的高度
+        //生成一个GameMap类的对象game_map，用于放置画布canvas，传入的参数是AcGamePlayground本身
+        this.game_map = new GameMap(this); 
 
+        //this.players = []; //创建数组用于存储玩家
+        //创建Player类的对象，并将其插入存储玩家的数组中，其中心坐标在游戏界面的中心，其半径是游戏界面高度的0.05
+        //颜色为白色，移速是每秒移动height的0.15，是自己，因此is_me = true
+        //this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "green", this.height * 0.15, true));
         this.start();
     }
 

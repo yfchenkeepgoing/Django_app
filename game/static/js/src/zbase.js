@@ -1,5 +1,5 @@
 //名称和web.html中的let ac_game = new AcGame();中的AcGame()保持一致
-class AcGame {
+export class AcGame {
     //构造函数，类似cpp中的构造函数或者python中的__init__函数
     //参数为id参见web.html
     constructor(id) {
@@ -8,7 +8,7 @@ class AcGame {
         this.$ac_game = $('#' + id);
 
         //创建出一个菜单页面类AcGameMenu的对象menu
-        this.menu = new AcGameMenu(this); 
+        //this.menu = new AcGameMenu(this); 
         //AcGameMenu函数需要传入参数root，参数root是总类的对象，也就是class AcGame的this对象
         
         //创建游戏界面对象

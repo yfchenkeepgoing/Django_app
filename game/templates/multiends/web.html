@@ -9,7 +9,6 @@
 
     <!-- 将自己定义的css文件和js文件加入进来，仿照以上格式 -->
     <link rel="stylesheet" href="{% static 'css/game.css' %}"> <!-- 在django的html文件中可以用django提供的一些工具来帮助快速查找文件 -->
-    <script src="{% static 'js/dist/game.js' %}"></script> <!-- js被打包到了dist文件夹中-->
     <!-- 打包文件有多种工具，后面将介绍一种工具，可以帮助打包文件、压缩代码、删除注释 -->
 </head>
 
@@ -22,7 +21,10 @@
     <!-- 引入js代码-->
     <!-- ac_game是对象，未来整个游戏界面都在AcGame()这个class里面 -->
     <!-- 真实渲染界面的部分在js中，因此整个页面是前端渲染的，而非后端 -->
-    <script>
+    <!-- 改用模块化的引用方式-->
+    <script type="module"> //当我们需要某个名称时，只将这个名称引进来，而不是将所有内容都变为全局变量
+        import {AcGame} from "{% static 'js/dist/game.js' %}"; //只会用到AcGame，引入方式类似python
+        //此时只会从上述js文件中载入一个名称AcGame，载入的AcGame也不会作为全局的全局变量
         $(document).ready(function(){   
             let ac_game = new AcGame("ac_game_12345678");  //传自div的id
         });
