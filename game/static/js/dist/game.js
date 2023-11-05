@@ -221,6 +221,9 @@ class Player extends AcGameObject {
 
         //移动时涉及浮点预算，需要eps, eps表示误差在多少以内就算0
         this.eps = 0.1; //误差在0.1以内就算0
+
+        // 判断当前选择了什么技能
+        this.cur_skill = null; // 当前并未选择技能
     }
 
     //需要start和update函数
@@ -247,8 +250,40 @@ class Player extends AcGameObject {
                 // 若在此处用this, 则这个this指的是mousedown函数本身，外面的this才是指整个class
                 // 将鼠标点击的位置e.clientX, e.clientY传给move_to函数的参数tx, ty
                 outer.move_to(e.clientX, e.clientY); // 鼠标坐标的api: e.clientX和e.clientY
+            } else if (e.which === 1) { // 若点击的是鼠标左键
+                if (outer.cur_skill === "fireball") { // 若当前技能是fireball，则应该释放一个火球
+                    outer.shoot_fireball(e.clientX, e.clientY); // 鼠标点击的坐标是e.clientX和e.clientY
+                }
+                outer.cur_skill = null; // 当前技能被释放掉
             }
         });
+
+        // 用window来获取按键, e表示传入一个事件, 可以查询网上的keycode对照表
+        // 火球用q键开启，q键的keycode是81
+        $(window).keydown(function(e) {
+            if (e.which === 81) {  // q
+                outer.cur_skill = "fireball" // 当前技能为火球
+                return false; // 表示之后不处理
+            }
+        });
+    }
+
+    // 发射火球的函数，需要传入坐标tx, ty，代表朝着这个点发射火球, 可以先不实现逻辑，先用console调试一下
+    shoot_fireball(tx, ty) {
+        // console.log("shoot fireball", tx, ty);
+        // 先定义关于火球的各种参数
+        let x = this.x, y = this.y; // 火球中心点的坐标和player中心点的坐标相同
+        let radius = this.playground.height * 0.01; // player的半径是0.05，火球的半径定为0.01
+
+        // vx, vy由angle确定
+        let angle = Math.atan2(ty - this.y, tx - this.x);
+        let vx = Math.cos(angle), vy = Math.sin(angle);
+        let color = "orange"; // 火球的颜色为橘黄色
+        let speed = this.playground.height * 0.5; // 人的速度是height * 0.15, 火球的速度应该超过人
+        let move_length = this.playground.height * 1; // 火球的最大射程是高度的1倍
+
+        // 创建火球，传入上述参数
+        new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length);
     }
 
     // 求(x, y)和(tx, ty)间的欧几里得距离
@@ -260,7 +295,7 @@ class Player extends AcGameObject {
 
     // 鼠标右键后小球移动到哪个位置(target x, target y)的函数
     move_to(tx, ty) {
-        console.log("move to", tx, ty); // 输出移动到的位置tx, ty
+        // console.log("move to", tx, ty); // 输出移动到的位置tx, ty
         this.move_length = this.get_dist(this.x, this.y, tx, ty); // 小球需要移动的距离通过get_dist函数计算出来
         let angle = Math.atan2(ty - this.y, tx - this.x); // 求小球移动的角度, atan2(y, x)，注意两个参数不要颠倒
         
@@ -299,7 +334,52 @@ class Player extends AcGameObject {
         //玩家也要每一帧中都画一次，因此需要在update函数中调用render函数
     }
 }
-class AcGamePlayground {
+class Fireball extends AcGameObject {
+    // 火球在攻击完别人后，需要一个计分系统，让后台知道是谁发的技能，同时自己发的火球不能打中自己，因此需要传入发出火球的玩家player作为参数
+    // constructor函数类似player的zbase.js中的constructor函数
+    constructor(playground, player, x, y, radius, vx, vy, color, speed, move_length) {
+        super(); // 调用基类的构造函数
+        this.playground = playground;
+        this.player = player;
+        this.ctx = this.playground.game_map.ctx;
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.radius = radius;
+        this.color = color;
+        this.speed = speed; 
+        this.move_length = move_length; // move_length为火球的移动距离(射程)
+        this.eps = 0.1 // 精度，小于0.1就认为是0
+    }
+
+    start() {
+
+    }
+
+    update() {
+        // 不移动火球
+        if (this.move_length < this.eps) {
+            this.destroy(); // 删除火球，destroy函数在ac_game_object中实现了
+            return false;
+        }
+
+        // 移动火球
+        let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000); // 同player
+        this.x += this.vx * moved; // 方向乘上距离（dcosθ）
+        this.y += this.vy * moved; // dsinθ
+        this.move_length -= moved; // 更新移动后的需要移动的距离
+        
+        this.render(); 
+    }
+
+    render() { // 类似player的zbase.js中的render函数
+        this.ctx.beginPath();
+        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.fillStyle = this.color;
+        this.ctx.fill();
+    }
+}class AcGamePlayground {
     constructor(root) {
         this.root = root; //存下root
 

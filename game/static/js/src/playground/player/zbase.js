@@ -24,6 +24,9 @@ class Player extends AcGameObject {
 
         //移动时涉及浮点预算，需要eps, eps表示误差在多少以内就算0
         this.eps = 0.1; //误差在0.1以内就算0
+
+        // 判断当前选择了什么技能
+        this.cur_skill = null; // 当前并未选择技能
     }
 
     //需要start和update函数
@@ -50,8 +53,40 @@ class Player extends AcGameObject {
                 // 若在此处用this, 则这个this指的是mousedown函数本身，外面的this才是指整个class
                 // 将鼠标点击的位置e.clientX, e.clientY传给move_to函数的参数tx, ty
                 outer.move_to(e.clientX, e.clientY); // 鼠标坐标的api: e.clientX和e.clientY
+            } else if (e.which === 1) { // 若点击的是鼠标左键
+                if (outer.cur_skill === "fireball") { // 若当前技能是fireball，则应该释放一个火球
+                    outer.shoot_fireball(e.clientX, e.clientY); // 鼠标点击的坐标是e.clientX和e.clientY
+                }
+                outer.cur_skill = null; // 当前技能被释放掉
             }
         });
+
+        // 用window来获取按键, e表示传入一个事件, 可以查询网上的keycode对照表
+        // 火球用q键开启，q键的keycode是81
+        $(window).keydown(function(e) {
+            if (e.which === 81) {  // q
+                outer.cur_skill = "fireball" // 当前技能为火球
+                return false; // 表示之后不处理
+            }
+        });
+    }
+
+    // 发射火球的函数，需要传入坐标tx, ty，代表朝着这个点发射火球, 可以先不实现逻辑，先用console调试一下
+    shoot_fireball(tx, ty) {
+        // console.log("shoot fireball", tx, ty);
+        // 先定义关于火球的各种参数
+        let x = this.x, y = this.y; // 火球中心点的坐标和player中心点的坐标相同
+        let radius = this.playground.height * 0.01; // player的半径是0.05，火球的半径定为0.01
+
+        // vx, vy由angle确定
+        let angle = Math.atan2(ty - this.y, tx - this.x);
+        let vx = Math.cos(angle), vy = Math.sin(angle);
+        let color = "orange"; // 火球的颜色为橘黄色
+        let speed = this.playground.height * 0.5; // 人的速度是height * 0.15, 火球的速度应该超过人
+        let move_length = this.playground.height * 1; // 火球的最大射程是高度的1倍
+
+        // 创建火球，传入上述参数
+        new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length);
     }
 
     // 求(x, y)和(tx, ty)间的欧几里得距离
@@ -63,7 +98,7 @@ class Player extends AcGameObject {
 
     // 鼠标右键后小球移动到哪个位置(target x, target y)的函数
     move_to(tx, ty) {
-        console.log("move to", tx, ty); // 输出移动到的位置tx, ty
+        // console.log("move to", tx, ty); // 输出移动到的位置tx, ty
         this.move_length = this.get_dist(this.x, this.y, tx, ty); // 小球需要移动的距离通过get_dist函数计算出来
         let angle = Math.atan2(ty - this.y, tx - this.x); // 求小球移动的角度, atan2(y, x)，注意两个参数不要颠倒
         
