@@ -230,6 +230,10 @@ class Player extends AcGameObject {
     start() {
         if (this.is_me) { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
             this.add_listening_events(); // 监听函数只能加给自己，不能加给敌人
+        } else { // 敌人用ai操纵
+            let tx = Math.random() * this.playground.width; // random会返回一个0-1之间的随机数
+            let ty = Math.random() * this.playground.height;
+            this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上
         }
     }
 
@@ -309,7 +313,12 @@ class Player extends AcGameObject {
         if (this.move_length < this.eps) {
             // 不需要移动时模长和单位速度的两个分量都为0
             this.move_length = 0;
-            this.vx = this.vy = 0; 
+            this.vx = this.vy = 0;
+            if (!this.is_me) { // 若是敌人（由AI操控），则需要生成新的随机目的地
+                let tx = Math.random() * this.playground.width; // random会返回一个0-1之间的随机数
+                let ty = Math.random() * this.playground.height;
+                this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上
+            }
         } else {
             // 两帧之间的时间间隔为timedelta，定义在ac_game_object/zbase.js中
             // 由于AcGameObject是本类的基类,所以会直接继承进来, timedelta的单位为ms，所以还需要/1000
@@ -400,6 +409,13 @@ class Fireball extends AcGameObject {
         // 创建Player类的对象，并将其插入存储玩家的数组中，其中心坐标在游戏界面的中心，其半径是游戏界面高度的0.05
         // 颜色为白色，移速是每秒移动height的0.15，是自己，因此is_me = true
         this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.15, true));
+        
+        // 6人一局，创建5个敌人
+        // 注意敌人不是自己，所以最后一个参数是false，敌人的颜色换为蓝色
+        for (let i = 0; i < 5; i ++ ) {
+            this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "blue", this.height * 0.15, false));
+        }
+
         this.start();
     }
 
