@@ -189,7 +189,7 @@ class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject�
 
     //渲染地图
     render() {
-        this.fillStyle = "rgba(0, 0, 0)"; //矩形的颜色：黑色，黑色用rgba(0, 0, 0)表示
+        this.ctx.fillStyle = "rgba(0, 0, 0)"; //矩形的颜色：黑色，黑色用rgba(0, 0, 0)表示
          //画出矩形，可以查看菜鸟教程html中的画布，四个参数分别是左上角的坐标和右下角的坐标
          //画布左上角的坐标是(0, 0)，右下角的坐标是(width, height)
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -222,7 +222,11 @@ class Player extends AcGameObject {
 
     //需要start和update函数
     start() {
+        // this.render();
+    }
 
+    update() {
+        this.render();
     }
 
     //渲染函数render
@@ -233,10 +237,6 @@ class Player extends AcGameObject {
         this.ctx.fillStyle = this.color; //设置颜色
         this.ctx.fill(); //填入颜色
         //玩家也要每一帧中都画一次，因此需要在update函数中调用render函数
-    }
-
-    update() {
-        this.render();
     }
 }class AcGamePlayground {
     constructor(root) {
@@ -256,9 +256,9 @@ class Player extends AcGameObject {
         this.game_map = new GameMap(this); 
 
         this.players = []; //创建数组用于存储玩家
-        //创建Player类的对象，并将其插入存储玩家的数组中，其中心坐标在游戏界面的中心，其半径是游戏界面高度的0.05
-        //颜色为白色，移速是每秒移动height的0.15，是自己，因此is_me = true
-        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "green", this.height * 0.15, true));
+        // 创建Player类的对象，并将其插入存储玩家的数组中，其中心坐标在游戏界面的中心，其半径是游戏界面高度的0.05
+        // 颜色为白色，移速是每秒移动height的0.15，是自己，因此is_me = true
+        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.15, true));
         this.start();
     }
 

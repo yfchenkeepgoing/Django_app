@@ -15,10 +15,10 @@ class AcGamePlayground {
         //生成一个GameMap类的对象game_map，用于放置画布canvas，传入的参数是AcGamePlayground本身
         this.game_map = new GameMap(this); 
 
-        //this.players = []; //创建数组用于存储玩家
-        //创建Player类的对象，并将其插入存储玩家的数组中，其中心坐标在游戏界面的中心，其半径是游戏界面高度的0.05
-        //颜色为白色，移速是每秒移动height的0.15，是自己，因此is_me = true
-        //this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "green", this.height * 0.15, true));
+        this.players = []; //创建数组用于存储玩家
+        // 创建Player类的对象，并将其插入存储玩家的数组中，其中心坐标在游戏界面的中心，其半径是游戏界面高度的0.05
+        // 颜色为白色，移速是每秒移动height的0.15，是自己，因此is_me = true
+        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.15, true));
         this.start();
     }
 

@@ -31,7 +31,7 @@ class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject�
 
     //渲染地图
     render() {
-        this.fillStyle = "rgba(0, 0, 0)"; //矩形的颜色：黑色，黑色用rgba(0, 0, 0)表示
+        this.ctx.fillStyle = "rgba(0, 0, 0)"; //矩形的颜色：黑色，黑色用rgba(0, 0, 0)表示
          //画出矩形，可以查看菜鸟教程html中的画布，四个参数分别是左上角的坐标和右下角的坐标
          //画布左上角的坐标是(0, 0)，右下角的坐标是(width, height)
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);

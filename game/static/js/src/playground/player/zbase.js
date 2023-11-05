@@ -25,7 +25,7 @@ class Player extends AcGameObject {
 
     //需要start和update函数
     start() {
-
+        // this.render();
     }
 
     update() {
