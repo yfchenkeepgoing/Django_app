@@ -211,6 +211,15 @@ class Player extends AcGameObject {
         this.y = y;
         this.vx = 0; // x方向上的速度，初始速度设置为0
         this.vy = 0; // y方向上的速度，初始速度设置为0
+
+        // player被fireball击中后，会被击晕且不受控制地滑行, vx和vy不可用，取而代之的是damage_x, damage_y, damage_speed
+        this.damage_x = 0; // cos(angle)
+        this.damage_y = 0; // sin(angle)
+        this.damage_speed = 0; // player被fireball击晕后的速度
+
+        // player被击中后，先退的快，后退的慢，因此需要定义摩擦力的概念
+        this.friction = 0.9; // 先定为0.9，后续可以调
+
         this.move_length = 0; // 小球需要移动的距离，设置为全局变量
 
         //半径、颜色、速度
@@ -286,8 +295,9 @@ class Player extends AcGameObject {
         let speed = this.playground.height * 0.5; // 人的速度是height * 0.15, 火球的速度应该超过人
         let move_length = this.playground.height * 1; // 火球的最大射程是高度的1倍
 
-        // 创建火球，传入上述参数
-        new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length);
+        // 创建火球，传入上述参数, 新加入火球的伤害值参数，每个玩家的半径是总高度的0.05，因此伤害值可以定义为总高度的0.01
+        // 相当于每次可以打掉玩家20%的血量
+        new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01);
     }
 
     // 求(x, y)和(tx, ty)间的欧几里得距离
@@ -308,27 +318,54 @@ class Player extends AcGameObject {
         this.vy = Math.sin(angle);
     }
 
-    update() {
-        // 若需要移动的长度小于eps，则不需要再移动了
-        if (this.move_length < this.eps) {
-            // 不需要移动时模长和单位速度的两个分量都为0
-            this.move_length = 0;
-            this.vx = this.vy = 0;
-            if (!this.is_me) { // 若是敌人（由AI操控），则需要生成新的随机目的地
-                let tx = Math.random() * this.playground.width; // random会返回一个0-1之间的随机数
-                let ty = Math.random() * this.playground.height;
-                this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上
-            }
-        } else {
-            // 两帧之间的时间间隔为timedelta，定义在ac_game_object/zbase.js中
-            // 由于AcGameObject是本类的基类,所以会直接继承进来, timedelta的单位为ms，所以还需要/1000
-            // 真实的移动距离为this.speed * this.timedelta / 1000和两点间模长取一个最小值，避免在当前的更新周期中移动超过目标点
-            let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000); // moved为update周期中应该移动的距离
-            this.x += this.vx * moved; // vx实际上是速度向量与x轴的夹角的cos值
-            this.y += this.vy * moved; // vy实际上是速度向量与x轴的夹角的sin值
+    // player被火球击中，因此需要定义函数is_attack，需要传入参数火球攻击的角度angle和伤害值damage
+    is_attack(angle, damage) {
+        // player的血量就是其半径，因此攻击后player的新半径为原本的半径-伤害值
+        this.radius -= damage;
+        if (this.radius < 10) { // 如果player的半径小于10像素，则认为player已死
+            this.destroy();
+            return false; // 不再处理后续
+        }
 
-            // 更新剩余需要移动的距离
-            this.move_length -= moved; // 每次移动的距离需要从总移动距离中减去
+        // 否则火球会给player一个angle朝向的冲击力，即速度
+        // 火球会击晕player，导致其不受控制的滑动一段距离
+        this.damage_x = Math.cos(angle);
+        this.damage_y = Math.sin(angle);
+        this.damage_speed = damage * 100; // 后退速度，可以逐步手动调整，太小了观察不到player被击退的效果
+    }
+
+    update() {
+        // 新的优先级，若this.damage_speed依然存在，则player的速度清零, player停下来
+        // 在damage_speed消失( < 10 )之前，被击中的player暂时无法有自己移动的距离move_length
+        if (this.damage_speed > 10) {
+            this.vx = this.vy = 0;
+            this.move_length = 0; 
+            this.x += this.damage_x * this.damage_speed * this.timedelta / 1000; // 有伤害，则优先用伤害移动自己
+            this.y += this.damage_y * this.damage_speed * this.timedelta / 1000;
+            this.damage_speed *= this.friction; // 加上摩擦力，减小damage_speed
+        }
+        else {
+            // 若需要移动的长度小于eps，则不需要再移动了
+            if (this.move_length < this.eps) {
+                // 不需要移动时模长和单位速度的两个分量都为0
+                this.move_length = 0;
+                this.vx = this.vy = 0;
+                if (!this.is_me) { // 若是敌人（由AI操控），则需要生成新的随机目的地
+                    let tx = Math.random() * this.playground.width; // random会返回一个0-1之间的随机数
+                    let ty = Math.random() * this.playground.height;
+                    this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上
+                }
+            } else {
+                // 两帧之间的时间间隔为timedelta，定义在ac_game_object/zbase.js中
+                // 由于AcGameObject是本类的基类,所以会直接继承进来, timedelta的单位为ms，所以还需要/1000
+                // 真实的移动距离为this.speed * this.timedelta / 1000和两点间模长取一个最小值，避免在当前的更新周期中移动超过目标点
+                let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000); // moved为update周期中应该移动的距离
+                this.x += this.vx * moved; // vx实际上是速度向量与x轴的夹角的cos值
+                this.y += this.vy * moved; // vy实际上是速度向量与x轴的夹角的sin值
+
+                // 更新剩余需要移动的距离
+                this.move_length -= moved; // 每次移动的距离需要从总移动距离中减去
+            }
         }
         this.render();
     }
@@ -346,7 +383,7 @@ class Player extends AcGameObject {
 class Fireball extends AcGameObject {
     // 火球在攻击完别人后，需要一个计分系统，让后台知道是谁发的技能，同时自己发的火球不能打中自己，因此需要传入发出火球的玩家player作为参数
     // constructor函数类似player的zbase.js中的constructor函数
-    constructor(playground, player, x, y, radius, vx, vy, color, speed, move_length) {
+    constructor(playground, player, x, y, radius, vx, vy, color, speed, move_length, damage) {
         super(); // 调用基类的构造函数
         this.playground = playground;
         this.player = player;
@@ -359,6 +396,7 @@ class Fireball extends AcGameObject {
         this.color = color;
         this.speed = speed; 
         this.move_length = move_length; // move_length为火球的移动距离(射程)
+        this.damage = damage;
         this.eps = 0.1 // 精度，小于0.1就认为是0
     }
 
@@ -378,8 +416,40 @@ class Fireball extends AcGameObject {
         this.x += this.vx * moved; // 方向乘上距离（dcosθ）
         this.y += this.vy * moved; // dsinθ
         this.move_length -= moved; // 更新移动后的需要移动的距离
+
+        // 判断炮弹是否击中敌人, playground中记录了所有的players，用于判断碰撞
+        for (let i = 0; i < this.playground.players.length; i ++ ) {
+            let player = this.playground.players[i];
+            // 当前枚举到的player不等于Fireball中的player, 即炮弹不应该伤害到自己本身
+            if (this.player !== player && this.is_collision(player)) { // 如果当前枚举到的player并非发出炮弹者，且炮弹击中了当前枚举到的玩家
+                this.attack(player);
+            }
+        }
         
         this.render(); 
+    }
+
+    // 重复实现求两点间距离的函数，用于求两个圆心间的距离
+    get_dist(x1, y1, x2, y2) {
+        let dx = x1 - x2;
+        let dy = y1 - y2;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // 判断碰撞的函数, 即判断火球和player圆心的距离是否小于两半径之和
+    is_collision(player) {
+        let distance = this.get_dist(this.x, this.y, player.x, player.y); // 前两个参数是火球的中心坐标，后两个参数是player的中心坐标
+        // 擦边不算击中
+        if (distance < this.radius + player.radius) 
+            return true; // 表示已经击中
+        return false; // 未打中
+    }
+
+    // 攻击某个玩家的函数
+    attack(player) {
+        let angle = Math.atan2(player.y - this.y, player.x - this.x);
+        player.is_attack(angle, this.damage); // 玩家被攻击到, 需要传入一个火球击中player的角度，同时传入一个伤害值
+        this.destroy(); // 火球击中目标后，应该消失
     }
 
     render() { // 类似player的zbase.js中的render函数
