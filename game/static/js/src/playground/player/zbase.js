@@ -34,6 +34,9 @@ class Player extends AcGameObject {
         //移动时涉及浮点预算，需要eps, eps表示误差在多少以内就算0
         this.eps = 0.1; //误差在0.1以内就算0
 
+        // 倒计时
+        this.spent_time = 0;
+
         // 判断当前选择了什么技能
         this.cur_skill = null; // 当前并未选择技能
     }
@@ -123,7 +126,7 @@ class Player extends AcGameObject {
 
     // player被火球击中，因此需要定义函数is_attacked，需要传入参数火球攻击的角度angle和伤害值damage
     is_attacked(angle, damage) {
-        
+
         // 每次释放随机数量的粒子效果
         // 粒子效果的数量在20-30之间
         for (let i = 0; i < 20 + Math.random() * 10; i ++ ) {
@@ -159,6 +162,17 @@ class Player extends AcGameObject {
     }
 
     update() {
+        this.spent_time += this.timedelta / 1000; // 时间累计
+
+        // 要求每五秒钟发射一枚炮弹，本函数每一秒钟被调用60次，因此每次被调用时发射炮弹的概率是1/300
+        // 保证五秒钟之后敌人开始攻击player
+        if (this.spent_time > 4 && Math.random() < 1 / 300.0) {
+            let player = this.playground.players[0]; // 找出players[0]
+
+            // 朝玩家释放炮弹，玩家是players[0]，参加playground/zbase.js
+            this.shoot_fireball(player.x, player.y);
+        }
+
         // 新的优先级，若this.damage_speed依然存在，则player的速度清零, player停下来
         // 在damage_speed消失( < 10 )之前，被击中的player暂时无法有自己移动的距离move_length
         if (this.damage_speed > 10) {
