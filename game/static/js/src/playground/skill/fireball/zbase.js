@@ -26,7 +26,7 @@ class Fireball extends AcGameObject {
         // 不移动火球
         if (this.move_length < this.eps) {
             this.destroy(); // 删除火球，destroy函数在ac_game_object中实现了
-            return false;
+            return false; // 停止函数的进一步执行，还阻止了事件的默认行为，并停止事件冒泡到父元素
         }
 
         // 移动火球
@@ -39,7 +39,8 @@ class Fireball extends AcGameObject {
         for (let i = 0; i < this.playground.players.length; i ++ ) {
             let player = this.playground.players[i];
             // 当前枚举到的player不等于Fireball中的player, 即炮弹不应该伤害到自己本身
-            if (this.player !== player && this.is_collision(player)) { // 如果当前枚举到的player并非发出炮弹者，且炮弹击中了当前枚举到的玩家
+            // 如果当前枚举到的player并非发出炮弹者，且炮弹击中了当前枚举到的玩家
+            if (this.player !== player && this.is_collision(player)) { 
                 this.attack(player);
             }
         }
@@ -56,7 +57,8 @@ class Fireball extends AcGameObject {
 
     // 判断碰撞的函数, 即判断火球和player圆心的距离是否小于两半径之和
     is_collision(player) {
-        let distance = this.get_dist(this.x, this.y, player.x, player.y); // 前两个参数是火球的中心坐标，后两个参数是player的中心坐标
+        // 前两个参数是火球的中心坐标，后两个参数是player的中心坐标
+        let distance = this.get_dist(this.x, this.y, player.x, player.y); 
         // 擦边不算击中
         if (distance < this.radius + player.radius) 
             return true; // 表示已经击中
@@ -66,7 +68,8 @@ class Fireball extends AcGameObject {
     // 攻击某个玩家的函数
     attack(player) {
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
-        player.is_attack(angle, this.damage); // 玩家被攻击到, 需要传入一个火球击中player的角度，同时传入一个伤害值
+        // 玩家被攻击到, 需要传入一个火球击中player的角度，同时传入一个伤害值
+        player.is_attacked(angle, this.damage); 
         this.destroy(); // 火球击中目标后，应该消失
     }
 

@@ -195,6 +195,55 @@ class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject�
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         //由于每一帧都需要重绘一遍地图，因此render函数应该是在update中执行，若在start中执行则只会在第一帧执行一次render函数
     }
+}class Particle extends AcGameObject {
+    // 构造函数
+    // vx和vy是速度的方向，需要playground因为需要ctx
+    constructor(playground, x, y, radius, vx, vy, color, speed, move_length) { 
+        super(); // 调用基类AcGameObject的构造函数，将particle注册到基类的全局数组AC_GAME_OBJECTS中
+        this.playground = playground;
+        this.ctx = this.playground.game_map.ctx;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.speed = speed;
+        this.move_length = move_length;
+        // 粒子效果也有一个逐渐变慢的过程，因此也需要一个摩擦力
+        this.friction = 0.9;
+        this.eps = 1;
+    }
+
+    // 第一帧
+    start() {
+
+    }
+
+    // 第二帧及后面帧调用的函数
+    update() {
+        if (this.move_length < this.eps || this.speed < this.eps) {
+            this.destroy(); // 销毁
+            return false; // 停止函数的进一步执行，还阻止了事件的默认行为，并停止事件冒泡到父元素
+        }
+
+        // 实际可以移动的距离在最大移动距离和理论可移动距离之间取二者的最小值
+        let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+
+        this.x += this.vx * moved; // 时间单位有ms变成s
+        this.y += this.vy * moved; 
+        this.speed *= this.friction; // 速度每次乘上摩擦力系数
+        this.move_length -= moved; 
+        this.render(); // 渲染
+    }
+
+    //渲染函数，和其他类中的render函数完全相同
+    render() {
+        this.ctx.beginPath();
+        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.fillStyle = this.color;
+        this.ctx.fill();
+    }
 }//Player也是一个游戏对象，因此也需要从AcGameObject中扩展出来
 class Player extends AcGameObject {
     //构造函数
@@ -318,8 +367,26 @@ class Player extends AcGameObject {
         this.vy = Math.sin(angle);
     }
 
-    // player被火球击中，因此需要定义函数is_attack，需要传入参数火球攻击的角度angle和伤害值damage
-    is_attack(angle, damage) {
+    // player被火球击中，因此需要定义函数is_attacked，需要传入参数火球攻击的角度angle和伤害值damage
+    is_attacked(angle, damage) {
+        
+        // 每次释放随机数量的粒子效果
+        // 粒子效果的数量在20-30之间
+        for (let i = 0; i < 20 + Math.random() * 10; i ++ ) {
+            let x = this.x, y = this.y; // 从player的中心释放出粒子效果
+            // radius也是一个随机值，但其大小应该和player的大小正相关
+            let radius = this.radius * Math.random() * 0.1;
+            // 释放粒子的角度：四面八方的随机
+            let angle = Math.PI * 2 * Math.random();
+            let vx = Math.cos(angle), vy = Math.sin(angle);
+            let color = this.color; // 当前player的颜色
+            let speed = this.speed * 10; // 当前player速度的10倍
+            let move_length = this.radius * Math.random() * 5; 
+
+            // 创建particle类的对象
+            new Particle(this.playground, x, y, radius, vx, vy, color, speed, move_length);
+        }
+
         // player的血量就是其半径，因此攻击后player的新半径为原本的半径-伤害值
         this.radius -= damage;
         if (this.radius < 10) { // 如果player的半径小于10像素，则认为player已死
@@ -331,7 +398,10 @@ class Player extends AcGameObject {
         // 火球会击晕player，导致其不受控制的滑动一段距离
         this.damage_x = Math.cos(angle);
         this.damage_y = Math.sin(angle);
-        this.damage_speed = damage * 100; // 后退速度，可以逐步手动调整，太小了观察不到player被击退的效果
+        // 后退速度，可以逐步手动调整，太小了观察不到player被击退的效果
+        this.damage_speed = damage * 100; 
+        // 每次被攻击后，玩家的移速衰减
+        this.speed *= 0.8;
     }
 
     update() {
@@ -339,7 +409,7 @@ class Player extends AcGameObject {
         // 在damage_speed消失( < 10 )之前，被击中的player暂时无法有自己移动的距离move_length
         if (this.damage_speed > 10) {
             this.vx = this.vy = 0;
-            this.move_length = 0; 
+            this.move_length = 0; // player被击中后停下，然后一直往后退，无法操作，知道damage_speed衰减到0
             this.x += this.damage_x * this.damage_speed * this.timedelta / 1000; // 有伤害，则优先用伤害移动自己
             this.y += this.damage_y * this.damage_speed * this.timedelta / 1000;
             this.damage_speed *= this.friction; // 加上摩擦力，减小damage_speed
@@ -408,7 +478,7 @@ class Fireball extends AcGameObject {
         // 不移动火球
         if (this.move_length < this.eps) {
             this.destroy(); // 删除火球，destroy函数在ac_game_object中实现了
-            return false;
+            return false; // 停止函数的进一步执行，还阻止了事件的默认行为，并停止事件冒泡到父元素
         }
 
         // 移动火球
@@ -421,7 +491,8 @@ class Fireball extends AcGameObject {
         for (let i = 0; i < this.playground.players.length; i ++ ) {
             let player = this.playground.players[i];
             // 当前枚举到的player不等于Fireball中的player, 即炮弹不应该伤害到自己本身
-            if (this.player !== player && this.is_collision(player)) { // 如果当前枚举到的player并非发出炮弹者，且炮弹击中了当前枚举到的玩家
+            // 如果当前枚举到的player并非发出炮弹者，且炮弹击中了当前枚举到的玩家
+            if (this.player !== player && this.is_collision(player)) { 
                 this.attack(player);
             }
         }
@@ -438,7 +509,8 @@ class Fireball extends AcGameObject {
 
     // 判断碰撞的函数, 即判断火球和player圆心的距离是否小于两半径之和
     is_collision(player) {
-        let distance = this.get_dist(this.x, this.y, player.x, player.y); // 前两个参数是火球的中心坐标，后两个参数是player的中心坐标
+        // 前两个参数是火球的中心坐标，后两个参数是player的中心坐标
+        let distance = this.get_dist(this.x, this.y, player.x, player.y); 
         // 擦边不算击中
         if (distance < this.radius + player.radius) 
             return true; // 表示已经击中
@@ -448,7 +520,8 @@ class Fireball extends AcGameObject {
     // 攻击某个玩家的函数
     attack(player) {
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
-        player.is_attack(angle, this.damage); // 玩家被攻击到, 需要传入一个火球击中player的角度，同时传入一个伤害值
+        // 玩家被攻击到, 需要传入一个火球击中player的角度，同时传入一个伤害值
+        player.is_attacked(angle, this.damage); 
         this.destroy(); // 火球击中目标后，应该消失
     }
 
@@ -483,10 +556,17 @@ class Fireball extends AcGameObject {
         // 6人一局，创建5个敌人
         // 注意敌人不是自己，所以最后一个参数是false，敌人的颜色换为蓝色
         for (let i = 0; i < 5; i ++ ) {
-            this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "blue", this.height * 0.15, false));
+            // 颜色随机，blue->this.get_random_color()
+            this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, this.get_random_color(), this.height * 0.15, false));
         }
 
         this.start();
+    }
+
+    // 给敌人随机颜色，自己设定几个颜色，在设定颜色的范围内随机
+    get_random_color() {
+        let colors = ["blue", "red", "pink", "grey", "green"];
+        return colors[Math.floor(Math.random() * 5)]; // 随机数为0-5，下取整
     }
 
     //所有对象最好都有start函数，用于给对象绑定监听函数或者设置初值

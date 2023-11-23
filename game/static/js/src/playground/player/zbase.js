@@ -121,8 +121,26 @@ class Player extends AcGameObject {
         this.vy = Math.sin(angle);
     }
 
-    // player被火球击中，因此需要定义函数is_attack，需要传入参数火球攻击的角度angle和伤害值damage
-    is_attack(angle, damage) {
+    // player被火球击中，因此需要定义函数is_attacked，需要传入参数火球攻击的角度angle和伤害值damage
+    is_attacked(angle, damage) {
+        
+        // 每次释放随机数量的粒子效果
+        // 粒子效果的数量在20-30之间
+        for (let i = 0; i < 20 + Math.random() * 10; i ++ ) {
+            let x = this.x, y = this.y; // 从player的中心释放出粒子效果
+            // radius也是一个随机值，但其大小应该和player的大小正相关
+            let radius = this.radius * Math.random() * 0.1;
+            // 释放粒子的角度：四面八方的随机
+            let angle = Math.PI * 2 * Math.random();
+            let vx = Math.cos(angle), vy = Math.sin(angle);
+            let color = this.color; // 当前player的颜色
+            let speed = this.speed * 10; // 当前player速度的10倍
+            let move_length = this.radius * Math.random() * 5; 
+
+            // 创建particle类的对象
+            new Particle(this.playground, x, y, radius, vx, vy, color, speed, move_length);
+        }
+
         // player的血量就是其半径，因此攻击后player的新半径为原本的半径-伤害值
         this.radius -= damage;
         if (this.radius < 10) { // 如果player的半径小于10像素，则认为player已死
@@ -134,7 +152,10 @@ class Player extends AcGameObject {
         // 火球会击晕player，导致其不受控制的滑动一段距离
         this.damage_x = Math.cos(angle);
         this.damage_y = Math.sin(angle);
-        this.damage_speed = damage * 100; // 后退速度，可以逐步手动调整，太小了观察不到player被击退的效果
+        // 后退速度，可以逐步手动调整，太小了观察不到player被击退的效果
+        this.damage_speed = damage * 100; 
+        // 每次被攻击后，玩家的移速衰减
+        this.speed *= 0.8;
     }
 
     update() {
@@ -142,7 +163,7 @@ class Player extends AcGameObject {
         // 在damage_speed消失( < 10 )之前，被击中的player暂时无法有自己移动的距离move_length
         if (this.damage_speed > 10) {
             this.vx = this.vy = 0;
-            this.move_length = 0; 
+            this.move_length = 0; // player被击中后停下，然后一直往后退，无法操作，知道damage_speed衰减到0
             this.x += this.damage_x * this.damage_speed * this.timedelta / 1000; // 有伤害，则优先用伤害移动自己
             this.y += this.damage_y * this.damage_speed * this.timedelta / 1000;
             this.damage_speed *= this.friction; // 加上摩擦力，减小damage_speed

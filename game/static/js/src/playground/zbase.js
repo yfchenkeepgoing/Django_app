@@ -23,10 +23,17 @@ class AcGamePlayground {
         // 6人一局，创建5个敌人
         // 注意敌人不是自己，所以最后一个参数是false，敌人的颜色换为蓝色
         for (let i = 0; i < 5; i ++ ) {
-            this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "blue", this.height * 0.15, false));
+            // 颜色随机，blue->this.get_random_color()
+            this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, this.get_random_color(), this.height * 0.15, false));
         }
 
         this.start();
+    }
+
+    // 给敌人随机颜色，自己设定几个颜色，在设定颜色的范围内随机
+    get_random_color() {
+        let colors = ["blue", "red", "pink", "grey", "green"];
+        return colors[Math.floor(Math.random() * 5)]; // 随机数为0-5，下取整
     }
 
     //所有对象最好都有start函数，用于给对象绑定监听函数或者设置初值
