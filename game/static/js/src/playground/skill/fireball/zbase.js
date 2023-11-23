@@ -56,6 +56,8 @@ class Fireball extends AcGameObject {
     }
 
     // 判断碰撞的函数, 即判断火球和player圆心的距离是否小于两半径之和
+    // 修改：本函数不仅可以用于判断火球和player间的碰撞，还可以用来判断任何两个物体之间的碰撞
+    // 比如火球和火球之间的碰撞，两个火球相撞则互相抵消
     is_collision(player) {
         // 前两个参数是火球的中心坐标，后两个参数是player的中心坐标
         let distance = this.get_dist(this.x, this.y, player.x, player.y); 

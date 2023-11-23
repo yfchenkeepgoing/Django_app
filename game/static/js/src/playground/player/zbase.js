@@ -166,11 +166,16 @@ class Player extends AcGameObject {
 
         // 要求每五秒钟发射一枚炮弹，本函数每一秒钟被调用60次，因此每次被调用时发射炮弹的概率是1/300
         // 保证五秒钟之后敌人开始攻击player
-        if (this.spent_time > 4 && Math.random() < 1 / 300.0) {
-            let player = this.playground.players[0]; // 找出players[0]
+        if (!this.is_me && this.spent_time > 4 && Math.random() < 1 / 300.0) {
+            // 随机产生一个被针对的玩家
+            let player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)]; 
 
-            // 朝玩家释放炮弹，玩家是players[0]，参加playground/zbase.js
-            this.shoot_fireball(player.x, player.y);
+            // 让AI更智能：加上轨迹预判，朝player0.3秒以后的位置射击
+            let tx = player.x + player.speed * this.vx * this.timedelta / 1000 * 0.3;
+            let ty = player.y + player.speed * this.vy * this.timedelta / 1000 * 0.3;
+
+            // 朝玩家释放炮弹，随机选择玩家，参加playground/zbase.js
+            this.shoot_fireball(tx, ty);
         }
 
         // 新的优先级，若this.damage_speed依然存在，则player的速度清零, player停下来
@@ -216,5 +221,14 @@ class Player extends AcGameObject {
         this.ctx.fillStyle = this.color; //设置颜色
         this.ctx.fill(); //填入颜色
         //玩家也要每一帧中都画一次，因此需要在update函数中调用render函数
+    }
+
+    // 当前玩家血量耗尽后，删除当前玩家
+    on_destroy() {
+        for (let i = 0; i < this.playground.players.length; i ++ ) {
+            if (this.playground.players[i] == this) {
+                this.playground.players.splice(i, 1);
+            }
+        }
     }
 }
