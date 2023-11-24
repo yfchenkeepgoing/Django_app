@@ -309,15 +309,20 @@ class Player extends AcGameObject {
         
         // 读取鼠标点击坐标的函数，需要参数e
         this.playground.game_map.$canvas.mousedown(function(e) {
+            // const表示变量是常量
+            const rect = outer.ctx.canvas.getBoundingClientRect();
+
             // 鼠标右键是e.which为3，鼠标左键是e.which为1，鼠标滚轮是e.which为2
             if (e.which === 3) { // 可以改为1，我更习惯用鼠标左键操纵小球的移动
                 // 可以看看鼠标点击有没有出发move_to函数，不要用this，用outer
                 // 若在此处用this, 则这个this指的是mousedown函数本身，外面的this才是指整个class
                 // 将鼠标点击的位置e.clientX, e.clientY传给move_to函数的参数tx, ty
-                outer.move_to(e.clientX, e.clientY); // 鼠标坐标的api: e.clientX和e.clientY
+                outer.move_to(e.clientX - rect.left, e.clientY - rect.top); // 鼠标坐标的api: e.clientX和e.clientY
+                // 注意，e.clientX是整个屏幕的坐标，但player的x坐标是画布中的相对坐标
+                // 需要将大坐标系中的绝对坐标映射为小坐标系中的相对坐标
             } else if (e.which === 1) { // 若点击的是鼠标左键
                 if (outer.cur_skill === "fireball") { // 若当前技能是fireball，则应该释放一个火球
-                    outer.shoot_fireball(e.clientX, e.clientY); // 鼠标点击的坐标是e.clientX和e.clientY
+                    outer.shoot_fireball(e.clientX- rect.left, e.clientY- rect.top); // 鼠标点击的坐标是e.clientX和e.clientY
                 }
                 outer.cur_skill = null; // 当前技能被释放掉
             }
