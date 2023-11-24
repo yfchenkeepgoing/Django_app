@@ -1,0 +1,54 @@
+/*类名前面一定要加上.，否则无法识别*/
+.ac-game-menu {
+    /*要覆盖整个页面，因此长高都是100%，css中每个对象都有一些属性，直接背下来即可，常用的属性就几个*/
+    width: 100%;
+    height: 100%;
+    background-image: url("/static/image/menu/background.gif"); /*背景是图片，要输入其地址*/
+
+    /*保证页面被图片100%填充而不重复，需要以下参数，宽度和高度都为100%*/
+    background-size: 100% 100%;
+
+    /*关闭整个界面中字体能被选中的功能*/
+    user-select: none;
+} 
+
+.ac-game-menu-field {
+    /*设置高度, vh是一个单位, 整个页面的高度为100vh，整个页面的宽度为100vw，用窗口大小百分比来设置按钮的高度和宽度*/
+    /*设置游戏的宽度和高度是，用百分比度量单位vw, vh而不用像素pixel*/
+    width: 20vw;
+    /*设置位置为相对位置，位置可以设置为固定位置fix、绝对位置absolute等*/
+    position: relative; /*设置位置为相对位置后，field的位置就可以被坐标确定，top是左上角距离上方的高度*/
+    top: 40vh; /*field距离上边的高度是40%页面的高度*/
+    left: 19vw; /*field距离左边的宽度是19%页面的宽度*/
+}
+
+.ac-game-menu-field-item {
+    color: white; /*字体为白色*/
+
+    /*settings, multi, single的高度和宽度，字体大小*/
+    height: 7vh;
+    width: 18vw;
+    font-size: 6vh;
+    font-style: italic; /*字体为斜体*/
+    padding: 2vh; /*field块中无法填充区域的高度，即内边距*/
+    text-align: center; /*居中，默认情况下为左对齐*/
+    background-color: rgba(39, 21, 28, 0.6); /*按钮的背景颜色，前三项是rgb，最后一项是透明度*/
+    border-radius: 10px; /*每个角圆弧的半径，数值越大则边角越圆，如果不设置则边角为直角，此处设置为10px*/
+    letter-spacing: 0.5vw; /*控制两个字之间的宽度，此处字间距是0.5%的页面宽度*/
+    cursor: pointer; /*cursor：光标，pointer：小手，放在按钮上时，鼠标应该从指针变成手掌的形状*/
+}
+
+/*hover的意思是鼠标悬浮在按钮上面时按钮的样式怎么变化*/
+.ac-game-menu-field-item:hover {
+    transform: scale(1.2);  /*鼠标悬浮在按钮上时按钮的大小扩大为原来的1.2倍*/
+    /*可以定义鼠标放在按钮上时按钮变化的时间，从而让这个过程显得平滑*/
+    transition: 100ms; /*即鼠标放在按钮上时鼠标变大的时间*/
+}
+
+/*添加ac-game-playground的样式*/
+.ac-game-playground {
+    width: 100%;
+    height: 100%; /*高度和宽度全部占满*/
+    user-select: none; /*用户不能选中界面中的字*/
+}
+
