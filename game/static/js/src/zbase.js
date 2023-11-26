@@ -8,7 +8,7 @@ export class AcGame {
         this.$ac_game = $('#' + id);
 
         //创建出一个菜单页面类AcGameMenu的对象menu
-        //this.menu = new AcGameMenu(this); 
+        this.menu = new AcGameMenu(this); // 第五节课中解开了这个注释
         //AcGameMenu函数需要传入参数root，参数root是总类的对象，也就是class AcGame的this对象
         
         //创建游戏界面对象
