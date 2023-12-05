@@ -39,6 +39,13 @@ class Player extends AcGameObject {
 
         // 判断当前选择了什么技能
         this.cur_skill = null; // 当前并未选择技能
+
+        // 加载用户头像
+        if (this.is_me) {
+            this.img = new Image();
+            // this.img.src = "图片地址";
+            this.img.src = this.playground.root.settings.photo;
+        }
     }
 
     //需要start和update函数
@@ -220,12 +227,24 @@ class Player extends AcGameObject {
 
     //渲染函数render
     render() {
-        //查看canvas教程，找到画圆的方法
-        this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);  //arc(x,y,r,start,stop)
-        this.ctx.fillStyle = this.color; //设置颜色
-        this.ctx.fill(); //填入颜色
-        //玩家也要每一帧中都画一次，因此需要在update函数中调用render函数
+        if (this.is_me) {
+            // 将图像渲染到代表player的圆圈上
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.stroke();
+            this.ctx.clip();
+            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2); 
+            this.ctx.restore();
+        }
+        else {
+            //查看canvas教程，找到画圆的方法
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);  //arc(x,y,r,start,stop)
+            this.ctx.fillStyle = this.color; //设置颜色
+            this.ctx.fill(); //填入颜色
+            //玩家也要每一帧中都画一次，因此需要在update函数中调用render函数
+        }
     }
 
     // 当前玩家血量耗尽后，删除当前玩家

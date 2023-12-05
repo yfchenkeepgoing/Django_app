@@ -28,6 +28,7 @@ class AcGameMenu{
         </div>
 </div>
 `);
+        this.$menu.hide(); // 写登录界面时先关闭菜单界面
         this.root.$ac_game.append(this.$menu); //将菜单页面类的对象menu按照定义时的样式插入总对象ac_game中
 
         // jquery中有find函数，可以在menu中找到某一个class对应的对象,注意class名前面要加上.，id前要加上#，这是jquery的语法
@@ -285,6 +286,13 @@ class Player extends AcGameObject {
 
         // 判断当前选择了什么技能
         this.cur_skill = null; // 当前并未选择技能
+
+        // 加载用户头像
+        if (this.is_me) {
+            this.img = new Image();
+            // this.img.src = "图片地址";
+            this.img.src = this.playground.root.settings.photo;
+        }
     }
 
     //需要start和update函数
@@ -466,12 +474,24 @@ class Player extends AcGameObject {
 
     //渲染函数render
     render() {
-        //查看canvas教程，找到画圆的方法
-        this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);  //arc(x,y,r,start,stop)
-        this.ctx.fillStyle = this.color; //设置颜色
-        this.ctx.fill(); //填入颜色
-        //玩家也要每一帧中都画一次，因此需要在update函数中调用render函数
+        if (this.is_me) {
+            // 将图像渲染到代表player的圆圈上
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.stroke();
+            this.ctx.clip();
+            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2); 
+            this.ctx.restore();
+        }
+        else {
+            //查看canvas教程，找到画圆的方法
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);  //arc(x,y,r,start,stop)
+            this.ctx.fillStyle = this.color; //设置颜色
+            this.ctx.fill(); //填入颜色
+            //玩家也要每一帧中都画一次，因此需要在update函数中调用render函数
+        }
     }
 
     // 当前玩家血量耗尽后，删除当前玩家
@@ -622,15 +642,118 @@ class Fireball extends AcGameObject {
         this.$playground.hide();
     }
 }
-//名称和web.html中的let ac_game = new AcGame();中的AcGame()保持一致
+class Settings {
+    // 构造函数，按照惯例有参数root
+    constructor(root) {
+        this.root = root;
+        
+        // 判断平台，平台的名字和views/settings/getinfo.py中的名字对应，默认是web平台
+        // js是从前端向后端传，views中的getinfo.py则是从服务器里接收
+        // 因此传的时候怎么传的，接的时候就应该怎么接，否则无法匹配
+        this.platform = "WEB";
+
+        // 若root中有参数AcWingOS，则平台是ACAPP
+        if (this.root.AcWingOS) this.platform = "ACAPP";
+
+        // 初始化当前用户的username和photo
+        this.username = "";
+        this.photo = "";
+
+        this.start();
+    }
+
+    // 创建之初需要执行的函数
+    start() {
+        this.getinfo(); // 创建之初需要从服务器端获取用户信息，因此需要函数getinfo
+    }
+
+    // 打开注册界面
+    register() {
+
+    }
+    
+    // 打开登录界面
+    login() {
+
+    }
+
+    // 从服务器端获取用户信息的函数
+    // 需要记住这是怎么写的，用ajax来写，ajax中传一个字典
+    // 其中包括getinfo函数显示在网站端的完整路径，这是因为本项目不仅要跑在web端还要跑在acapp端
+    getinfo() {
+        let outer = this; 
+        $.ajax({
+            url: "https://app5894.acapp.acwing.com.cn/settings/getinfo/",
+            type: "GET", // 类型都默认为GET
+            // getinfo.py中需要什么数据，就传入什么数据
+            // getinfo.py:
+            // def getinfo(request):
+            // # 判断从哪个前端发送而来，传入参数platform，这个参数需要我们在前端自定义
+            // platform = request.GET.get('platform')
+            // if platform == "ACAPP":
+            //     return getinfo_acapp(request)
+            // elif platform = "WEB":
+            //     return getinfo_web(request)
+            data: {
+                // 函数内部不宜直接用this，函数内部的this可能是函数本身，而非这个class本身
+                // 函数内部用this需要在函数外部定义: let outer = this; 
+                platform: outer.platform,
+            },
+
+            // 调用成功则返回success
+            // resp是getinfo.py中返回的值，由下面的代码可知
+            // # 返回信息
+            // return JsonResponse({
+            //     'result': "success", # 返回查询结果，成功则返回success，失败则返回理由
+            //     'username': player.user.username,
+            //     'photo': player.photo,
+            // })
+            // 返回值确切来说是一个字典(dict)，这个返回值会被传给参数resp，可以打印出来观察
+            success: function(resp) {
+                console.log(resp); // 打印getinfo.py的返回值
+                // 若返回值为success，则应该打开菜单界面，隐藏登录界面（当前界面）
+                // 因此，本文件中也需要实现隐藏函数和显示函数
+                if (resp.result == "success") {
+                    // 将resp中的username和photo存入outer中
+                    outer.username = resp.username;
+                    outer.photo = resp.photo;
+                    
+                    outer.hide(); // 隐藏登录界面
+                    outer.root.menu.show(); // 打开菜单界面
+                } 
+
+                // 若获取返回信息未成功，则应该弹出登录界面
+                else {
+                    outer.login(); // 弹出登录界面
+                }
+            }
+        });
+    }
+
+    // 隐藏函数
+    hide() {
+
+    }
+
+    // 显示函数
+    show() {
+
+    }
+}//名称和web.html中的let ac_game = new AcGame();中的AcGame()保持一致
 export class AcGame {
     //构造函数，类似cpp中的构造函数或者python中的__init__函数
     //参数为id参见web.html
-    constructor(id) {
+    constructor(id, AcWingOS) {
         this.id = id; //存下id，传入的id是web.html中div的id
         //创建总对象ac_game：需要利用jquery在web.html中根据id找出div，将这个div存入总对象ac_game中
         this.$ac_game = $('#' + id);
 
+        // 记下AcWingOS
+        this.AcWingOS = AcWingOS;
+
+        // 创建settings/zbase.js中的class Settings
+        this.settings = new Settings(this);
+        
         //创建出一个菜单页面类AcGameMenu的对象menu
         this.menu = new AcGameMenu(this); // 第五节课中解开了这个注释
         //AcGameMenu函数需要传入参数root，参数root是总类的对象，也就是class AcGame的this对象

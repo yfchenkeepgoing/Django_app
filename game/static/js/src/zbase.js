@@ -9,6 +9,9 @@ export class AcGame {
 
         // 记下AcWingOS
         this.AcWingOS = AcWingOS;
+
+        // 创建settings/zbase.js中的class Settings
+        this.settings = new Settings(this);
         
         //创建出一个菜单页面类AcGameMenu的对象menu
         this.menu = new AcGameMenu(this); // 第五节课中解开了这个注释

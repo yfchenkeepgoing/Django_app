@@ -17,15 +17,25 @@ def getinfo_acapp(request):
 
 # 前端为web时处理请求的函数
 def getinfo_web(request):
-    # 每次从数据库中取出第一名玩家的信息
-    player = Player.objects.all()[0]
+    # 获取当前请求的客户，具体为什么这样写参考笔记
+    user = request.user 
 
-    # 返回信息
-    return JsonResponse({
-        'result': "success", # 返回查询结果，成功则返回success，失败则返回理由
-        'username': player.user.username,
-        'photo': player.photo,
-    })
+    # 判断用户是否登录的内置函数
+    # 若未登录，则返回未登录字样
+    if not user.is_authenticated: 
+        return JsonResponse({
+            'result': "未登录",
+        })
+    else: 
+        # 每次从数据库中取出第一名玩家的信息
+        player = Player.objects.all()[0]
+
+        # 返回信息
+        return JsonResponse({
+            'result': "success", # 返回查询结果，成功则返回success，失败则返回理由
+            'username': player.user.username,
+            'photo': player.photo,
+        })
 
 # 定义处理请求的函数
 def getinfo(request):
@@ -33,7 +43,7 @@ def getinfo(request):
     platform = request.GET.get('platform')
     if platform == "ACAPP":
         return getinfo_acapp(request)
-    else:
+    elif platform == "WEB":
         return getinfo_web(request)
     
 

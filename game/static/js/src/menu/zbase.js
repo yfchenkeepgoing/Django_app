@@ -28,6 +28,7 @@ class AcGameMenu{
         </div>
 </div>
 `);
+        this.$menu.hide(); // 写登录界面时先关闭菜单界面
         this.root.$ac_game.append(this.$menu); //将菜单页面类的对象menu按照定义时的样式插入总对象ac_game中
 
         // jquery中有find函数，可以在menu中找到某一个class对应的对象,注意class名前面要加上.，id前要加上#，这是jquery的语法
