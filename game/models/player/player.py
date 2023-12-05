@@ -13,6 +13,7 @@ class Player(models.Model):
 
     # 除去基础信息外，还需存储玩家的头像，类型是URL
     # 最大长度是256，可以为空
+    # 还可以仿照这个样式去添加其他信息，如性别、年龄、邮箱等信息
     photo = models.URLField(max_length = 256, blank = True) 
 
     # 用于显示每个player数据展示在admin页面中的名字
