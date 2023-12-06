@@ -659,6 +659,60 @@ class Settings {
         this.username = "";
         this.photo = "";
 
+        // 使用jquery创建一个新的html元素
+        this.$settings = $(`
+<div class = "ac-game-settings">
+    <div class="ac-game-settings-login">
+        <div class="ac-game-settings-title">
+            登录
+        </div>
+        <div class="ac-game-settings-username">
+            <div class="ac-game-settings-item">
+                <input type="text" placeholder="用户名">
+            </div>
+        </div>
+        <div class="ac-game-settings-password">
+            <div class="ac-game-settings-item">
+                <input type="password" placeholder="密码">
+            </div> 
+        </div>
+        <div class="ac-game-settings-submit">
+            <div class="ac-game-settings-item">
+                <button>登录</button>
+            </div>
+        </div>
+        <div class="ac-game-settings-error-messages">
+            用户密码错误
+        </div>
+        <div class="ac-game-settings-option">
+            注册
+        </div>
+        <br>
+        <div class="ac-game-settings-acwing">
+            <img width="30" src="https://app5894.acapp.acwing.com.cn/static/image/settings/third_party_login_logo.png">
+            <br>
+            <div>
+                AcWing一键登录
+            </div>
+        </div>
+    </div>
+    <div class="ac-game-settings-register">
+    </div>
+</div>
+`);
+        // 登录界面
+        this.$login = this.$settings.find(".ac-game-settings-login");
+        // 默认隐藏登录界面
+        this.$login.hide();
+        
+        // 注册界面
+        this.$register = this.$settings.find(".ac-game-settings-register");
+        // 默认隐藏注册界面
+        this.$register.hide();
+
+        //将settings加到窗口中去
+        this.root.$ac_game.append(this.$settings);
+
         this.start();
     }
 
@@ -669,12 +723,18 @@ class Settings {
 
     // 打开注册界面
     register() {
-
+        // 关掉登录界面
+        this.$login.hide();
+        // 打开注册界面
+        this.$register.show();
     }
     
     // 打开登录界面
     login() {
-
+        // 关掉注册界面
+        this.$register.hide();
+        // 打开登录界面
+        this.$login.show();
     }
 
     // 从服务器端获取用户信息的函数
@@ -717,7 +777,7 @@ class Settings {
                     // 将resp中的username和photo存入outer中
                     outer.username = resp.username;
                     outer.photo = resp.photo;
-                    
+
                     outer.hide(); // 隐藏登录界面
                     outer.root.menu.show(); // 打开菜单界面
                 } 
@@ -732,12 +792,12 @@ class Settings {
 
     // 隐藏函数
     hide() {
-
+        this.$settings.hide();
     }
 
     // 显示函数
     show() {
-
+        this.$settings.show();
     }
 }//名称和web.html中的let ac_game = new AcGame();中的AcGame()保持一致
 export class AcGame {

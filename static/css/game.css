@@ -1,4 +1,152 @@
 /*类名前面一定要加上.，否则无法识别*/
+
+/*登录和注册的背景*/
+.ac-game-settings {
+    /*要覆盖整个页面，因此长高都是100%，css中每个对象都有一些属性，直接背下来即可，常用的属性就几个*/
+    width: 100%;
+    height: 100%;
+    background-image: url("/static/image/menu/background.gif"); /*背景是图片，要输入其地址*/
+
+    /*保证页面被图片100%填充而不重复，需要以下参数，宽度和高度都为100%*/
+    background-size: 100% 100%;
+
+    /*关闭整个界面中字体能被选中的功能*/
+    user-select: none;
+}
+
+/*登录界面*/
+.ac-game-settings-login {
+    height: 41vh; /*41%的高度比较好看*/
+    width: 20vw; /*20%的高度比较好看*/
+
+    /*居中，登录界面是一个矩形，其中心距离整个界面的上方是50%，距离整个界面的左边是50%*/
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);/*将锚点从左上角改为中心*/
+    background-color: rgba(0, 0, 0, 0.7); /*0, 0, 0代表黑色，透明度为0.7，rgba可以调透明度*/
+    border-radius: 5px; /*登录界面的黑框加上圆角*/
+}
+
+.ac-game-settings-title {
+    color: white; /*背景颜色是深色，标题改为白色*/
+    font-size: 3vh; /*字体大小先设为3%的高度，后续可以调整*/
+    text-align: center; /*居中*/
+    /*height: 7vh; /*高度设置为7vh，先尝试*/
+    padding-top: 2vh; /*元素内容(登录二字)顶部和其上边框之间的空间*/
+    margin-bottom: 2vh; /*元素(登录二字)底部和下一个元素顶部之间的空间*/
+}
+
+/*username里面嵌套item，item里面嵌套input，username是负责用户名输入的模块*/
+.ac-game-settings-username {
+    display: block; /*display是block类型，表示一块*/
+    height: 7vh;
+}
+
+/*password是负责密码输入的模块*/
+.ac-game-settings-password {
+    display: block;
+    height: 7vh;
+}
+
+/*定义按钮模块*/
+.ac-game-settings-submit {
+    display: block;
+    height: 7vh;
+}
+
+/*第三方授权登录的按钮*/
+.ac-game-settings-acwing {
+    display: block;
+    height: 7vh;
+}
+
+/*进一步组织或样式化用户名、密码等多种输入框*/
+.ac-game-settings-item {
+    width: 100%;
+    height: 100%;
+}
+
+/*用户名输入框的格式*/
+.ac-game-settings-item > input {
+    width: 90%; /*宽度为登录界面宽度的90%*/
+    line-height: 3vh; /*定义行高*/
+    /*居中，登录界面是一个矩形，其中心距离整个界面的上方是50%，距离整个界面的左边是50%*/
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);/*将锚点从左上角改为中心*/
+}
+
+/*具体的按钮，同用户名输入框和密码输入框一样由ac-game-settings-item进行管理*/
+/*ac-game-settings-item > 是一种选择器*/
+.ac-game-settings-item > button {
+    color: white; /*botton的颜色改为白色*/
+    width: 90%; /*宽度为登录界面宽度的90%*/
+    line-height: 3vh; /*定义行高*/
+    /*居中，登录界面是一个矩形，其中心距离整个界面的上方是50%，距离整个界面的左边是50%*/
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);/*将锚点从左上角改为中心*/
+    background-color: #4CAF50; /*背景颜色，来自yxc的QQ取色：一种好看的绿色*/
+    border-radius: 5px; /*登录按钮的边框改成圆角*/
+}
+
+/*报错信息的样式*/
+.ac-game-settings-error-messages {
+    /*报错信息的字体颜色为红色，字号不宜大*/
+    color: red;
+    font-size: 0.8vh; 
+    display: inline; /*一行显示而不会多行显示*/
+    float: left; /*左对齐*/
+    padding-left: 1vw; /*为避免报错信息太靠左，左边需要有一个页边距*/
+}
+
+/*注册的样式*/
+.ac-game-settings-option {
+    color: white;
+    font-size: 2vh;
+    display: inline; /*一行显示而不会多行显示*/
+    float: right; /*右对齐*/
+    padding-right: 1vw; /*为避免注册按钮太靠右，右边需要有一个页边距*/
+    cursor: pointer; /*鼠标从箭头变成小手形状*/
+}
+
+/*创建图片的格式*/
+.ac-game-settings-acwing > img {
+    /*居中*/
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);/*将锚点从左上角改为中心*/
+    cursor: pointer; /*鼠标由箭头改为小手形状*/
+    display: block;
+}
+
+/*acwing一键登录的格式*/
+.ac-game-settings-acwing > div {
+    color: white;
+    font-size: 1.5vh;
+    text-align: center;/*文本居中*/
+    display: block;
+}
+
+/*注册界面*/
+.ac-game-settings-register {
+    /*注册界面有三行：用户名、密码和确认密码，登录界面只有两行：用户名、密码，因此注册界面height会更大*/
+    height: 49vh; 
+    width: 20vw; /*20%的高度比较好看*/
+
+    /*居中，登录界面是一个矩形，其中心距离整个界面的上方是50%，距离整个界面的左边是50%*/
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);/*将锚点从左上角改为中心*/
+    background-color: rgba(0, 0, 0, 0.7); /*0, 0, 0代表黑色，透明度为0.7，rgba可以调透明度*/
+    border-radius: 5px; /*登录界面的黑框加上圆角*/
+}
+
 .ac-game-menu {
     /*要覆盖整个页面，因此长高都是100%，css中每个对象都有一些属性，直接背下来即可，常用的属性就几个*/
     width: 100%;
