@@ -43,7 +43,7 @@ class Settings {
             </div>
         </div>
 
-        <div class="ac-game-settings-error-messages">
+        <div class="ac-game-settings-error-message">
         </div>
 
         <div class="ac-game-settings-option">
@@ -73,13 +73,13 @@ class Settings {
             </div>
         </div>
 
-        <div class="ac-game-settings-password">
+        <div class="ac-game-settings-password ac-game-settings-password-first">
             <div class="ac-game-settings-item">
                 <input type="password" placeholder="密码">
             </div> 
         </div>
 
-        <div class="ac-game-settings-password">
+        <div class="ac-game-settings-password ac-game-settings-password-second">
             <div class="ac-game-settings-item">
                 <input type="password" placeholder="确认密码">
             </div> 
@@ -91,7 +91,7 @@ class Settings {
             </div>
         </div>
 
-        <div class="ac-game-settings-error-messages">
+        <div class="ac-game-settings-error-message">
         </div>
 
         <div class="ac-game-settings-option">
@@ -113,11 +113,39 @@ class Settings {
 `);
         // 登录界面
         this.$login = this.$settings.find(".ac-game-settings-login");
+
+        // 索引username中的input，即在html的username模块寻找input
+        // 由于input和username模块不在同一级，因此应该用空格隔开，而非>
+        // 用>隔开说明input和username是相邻的两级
+        this.$login_username = this.$login.find(".ac-game-settings-username input");
+        // 索引password中的input
+        this.$login_password = this.$login.find(".ac-game-settings-password input");
+        // 索引submit模块中的button按钮
+        this.$login_submit = this.$login.find(".ac-game-settings-submit button");
+        // 索引error message，由于其中什么也没有，因此直接索引本体即可
+        this.$login_error_message = this.$login.find(".ac-game-settings-error-message");
+        // 索引option（登录页面的注册按钮），由于其中什么也没有，因此直接索引本体即可
+        this.$login_register = this.$login.find(".ac-game-settings-option");
+
         // 默认隐藏登录界面
         this.$login.hide();
         
         // 注册界面
         this.$register = this.$settings.find(".ac-game-settings-register");
+        // 同理，也需要索引出login中索引出的相应内容
+        // 索引username
+        this.$register_username = this.$register.find(".ac-game-settings-username input");
+        // 索引password
+        this.$register_password = this.$register.find(".ac-game-settings-password-first");
+        // 索引确认password
+        this.$register_password_confirm = this.$register.find(".ac-game-settings-password-second");
+        // 索引submit
+        this.$register_submit = this.$register.find(".ac-game-settings-submit button");
+        // 索引error message
+        this.$register_error_message = this.$register.find(".ac-game-settings-error-message");
+        // 索引option（注册页面的登录按钮）
+        this.$register_login = this.$register.find(".ac-game-settings-option");
+
         // 默认隐藏注册界面
         this.$register.hide();
 
@@ -195,8 +223,8 @@ class Settings {
 
                 // 若获取返回信息未成功，则应该弹出登录界面
                 else {
-                    // outer.login(); // 弹出登录界面
-                    outer.register(); // 展示注册界面
+                    outer.login(); // 弹出登录界面
+                    // outer.register(); // 展示注册界面
                 }
             }
         });
