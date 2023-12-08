@@ -23,7 +23,7 @@ class AcGameMenu{
             </div>
             <br>
             <div class="ac-game-menu-field-item ac-game-menu-field-item-settings">
-                设置
+                退出
             </div>
         </div>
 </div>
@@ -64,8 +64,10 @@ class AcGameMenu{
         });
 
         //同理，当设置按钮被点击（click）时，会自动调用以下函数
+        // 设置按钮暂时被改为登出按钮
         this.$settings.click(function(){
             console.log("click settings"); //先不写函数，先输出一句话
+            outer.root.settings.logout_on_remote(); // 点击登出按钮则服务器端登出
         });
     }
 

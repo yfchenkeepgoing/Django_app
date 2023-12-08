@@ -158,6 +158,94 @@ class Settings {
     // 创建之初需要执行的函数
     start() {
         this.getinfo(); // 创建之初需要从服务器端获取用户信息，因此需要函数getinfo
+        this.add_listening_events(); // 绑定监听函数
+    }
+
+    // 写一个专门的函数来绑定事件，其中包含登录界面的监听函数和注册界面的监听函数
+    add_listening_events() {
+        this.add_listening_events_login(); // 登录界面的监听函数
+        this.add_listening_events_register(); // 注册界面的监听函数
+    }
+
+    // 登录界面的监听函数
+    add_listening_events_login() {
+        // 凡是有click函数，外面都定义outer
+        let outer = this;
+
+        // 登录界面的注册按钮点完后要跳到注册界面
+        this.$login_register.click(function() {
+            outer.register(); // 跳到注册界面
+        });
+
+        // 给登录界面的登录按钮加一个监听函数
+        this.$login_submit.click(function() {
+            outer.login_on_remote(); // 调用在远程服务器上登录的函数
+        });
+    }
+
+    // 注册界面的监听函数
+    add_listening_events_register() {
+        // 凡是有click函数，外面都定义outer
+        let outer = this;
+
+        // 注册界面的登录按钮点完后要跳到登录界面
+        this.$register_login.click(function() {
+            outer.login(); // 跳到注册界面
+        });
+    }
+
+    // 在远程服务器上登录的函数，是一个ajax
+    // 点击登录界面的登录按钮时登录，因此给这个按钮绑定一个触发函数
+    login_on_remote() {
+        let outer = this;
+        let username = this.$login_username.val(); // 取出login_username的值
+        let password = this.$login_password.val(); // 取出login_password的值
+        // 每次登录时，清空上一次的login_error_message
+        this.$login_error_message.empty();
+
+        // 调用服务器的登录函数
+        $.ajax({
+            url: "https://app5894.acapp.acwing.com.cn/settings/login/",
+            type: "GET",
+            data: {
+                username: username,
+                password: password,
+            },
+            success: function(resp) { // 返回值为后端传回来的一个字典，将其传入参数resp中
+                console.log(resp) // 输出resp，看对不对
+                // 三等号用于比较
+                // 若登录成功，则刷新，在cookie中会记录已经登录成功，刷新页面后进入菜单界面
+                if (resp.result === "success") {
+                    location.reload(); 
+                } else {
+                    outer.$login_error_message.html(resp.result); // 登录失败则显示用户名或密码不正确       
+                }
+            }
+        });
+    }
+
+    // 在远程服务器上注册的函数
+    register_on_remote() {
+    }
+
+    // 在远程服务器上登出的函数
+    logout_on_remote() {
+        // 若前端是acapp，则不需要退出，acapp中关掉游戏界面就算是退出
+        if (this.platform === "ACAPP") return false; 
+
+        // 若前端是web，则有如下的登出操作
+        $.ajax({
+            url: "https://app5894.acapp.acwing.com.cn/settings/logout/",
+            type: "GET",
+            // 退出不需要参数，因此不需要data
+            success: function(resp) {
+                console.log(resp); // 输出后端返回的结果，用于调试
+                // 后端返回的resp的result必定为success
+                if (resp.result === "success") {
+                    location.reload(); // 刷新页面
+                }
+            }
+        });
     }
 
     // 打开注册界面

@@ -23,7 +23,7 @@ class AcGameMenu{
             </div>
             <br>
             <div class="ac-game-menu-field-item ac-game-menu-field-item-settings">
-                设置
+                退出
             </div>
         </div>
 </div>
@@ -64,8 +64,10 @@ class AcGameMenu{
         });
 
         //同理，当设置按钮被点击（click）时，会自动调用以下函数
+        // 设置按钮暂时被改为登出按钮
         this.$settings.click(function(){
             console.log("click settings"); //先不写函数，先输出一句话
+            outer.root.settings.logout_on_remote(); // 点击登出按钮则服务器端登出
         });
     }
 
@@ -687,7 +689,7 @@ class Settings {
             </div>
         </div>
 
-        <div class="ac-game-settings-error-messages">
+        <div class="ac-game-settings-error-message">
         </div>
 
         <div class="ac-game-settings-option">
@@ -717,13 +719,13 @@ class Settings {
             </div>
         </div>
 
-        <div class="ac-game-settings-password">
+        <div class="ac-game-settings-password ac-game-settings-password-first">
             <div class="ac-game-settings-item">
                 <input type="password" placeholder="密码">
             </div> 
         </div>
 
-        <div class="ac-game-settings-password">
+        <div class="ac-game-settings-password ac-game-settings-password-second">
             <div class="ac-game-settings-item">
                 <input type="password" placeholder="确认密码">
             </div> 
@@ -735,7 +737,7 @@ class Settings {
             </div>
         </div>
 
-        <div class="ac-game-settings-error-messages">
+        <div class="ac-game-settings-error-message">
         </div>
 
         <div class="ac-game-settings-option">
@@ -757,11 +759,39 @@ class Settings {
 `);
         // 登录界面
         this.$login = this.$settings.find(".ac-game-settings-login");
+
+        // 索引username中的input，即在html的username模块寻找input
+        // 由于input和username模块不在同一级，因此应该用空格隔开，而非>
+        // 用>隔开说明input和username是相邻的两级
+        this.$login_username = this.$login.find(".ac-game-settings-username input");
+        // 索引password中的input
+        this.$login_password = this.$login.find(".ac-game-settings-password input");
+        // 索引submit模块中的button按钮
+        this.$login_submit = this.$login.find(".ac-game-settings-submit button");
+        // 索引error message，由于其中什么也没有，因此直接索引本体即可
+        this.$login_error_message = this.$login.find(".ac-game-settings-error-message");
+        // 索引option（登录页面的注册按钮），由于其中什么也没有，因此直接索引本体即可
+        this.$login_register = this.$login.find(".ac-game-settings-option");
+
         // 默认隐藏登录界面
         this.$login.hide();
         
         // 注册界面
         this.$register = this.$settings.find(".ac-game-settings-register");
+        // 同理，也需要索引出login中索引出的相应内容
+        // 索引username
+        this.$register_username = this.$register.find(".ac-game-settings-username input");
+        // 索引password
+        this.$register_password = this.$register.find(".ac-game-settings-password-first");
+        // 索引确认password
+        this.$register_password_confirm = this.$register.find(".ac-game-settings-password-second");
+        // 索引submit
+        this.$register_submit = this.$register.find(".ac-game-settings-submit button");
+        // 索引error message
+        this.$register_error_message = this.$register.find(".ac-game-settings-error-message");
+        // 索引option（注册页面的登录按钮）
+        this.$register_login = this.$register.find(".ac-game-settings-option");
+
         // 默认隐藏注册界面
         this.$register.hide();
 
@@ -774,6 +804,94 @@ class Settings {
     // 创建之初需要执行的函数
     start() {
         this.getinfo(); // 创建之初需要从服务器端获取用户信息，因此需要函数getinfo
+        this.add_listening_events(); // 绑定监听函数
+    }
+
+    // 写一个专门的函数来绑定事件，其中包含登录界面的监听函数和注册界面的监听函数
+    add_listening_events() {
+        this.add_listening_events_login(); // 登录界面的监听函数
+        this.add_listening_events_register(); // 注册界面的监听函数
+    }
+
+    // 登录界面的监听函数
+    add_listening_events_login() {
+        // 凡是有click函数，外面都定义outer
+        let outer = this;
+
+        // 登录界面的注册按钮点完后要跳到注册界面
+        this.$login_register.click(function() {
+            outer.register(); // 跳到注册界面
+        });
+
+        // 给登录界面的登录按钮加一个监听函数
+        this.$login_submit.click(function() {
+            outer.login_on_remote(); // 调用在远程服务器上登录的函数
+        });
+    }
+
+    // 注册界面的监听函数
+    add_listening_events_register() {
+        // 凡是有click函数，外面都定义outer
+        let outer = this;
+
+        // 注册界面的登录按钮点完后要跳到登录界面
+        this.$register_login.click(function() {
+            outer.login(); // 跳到注册界面
+        });
+    }
+
+    // 在远程服务器上登录的函数，是一个ajax
+    // 点击登录界面的登录按钮时登录，因此给这个按钮绑定一个触发函数
+    login_on_remote() {
+        let outer = this;
+        let username = this.$login_username.val(); // 取出login_username的值
+        let password = this.$login_password.val(); // 取出login_password的值
+        // 每次登录时，清空上一次的login_error_message
+        this.$login_error_message.empty();
+
+        // 调用服务器的登录函数
+        $.ajax({
+            url: "https://app5894.acapp.acwing.com.cn/settings/login/",
+            type: "GET",
+            data: {
+                username: username,
+                password: password,
+            },
+            success: function(resp) { // 返回值为后端传回来的一个字典，将其传入参数resp中
+                console.log(resp) // 输出resp，看对不对
+                // 三等号用于比较
+                // 若登录成功，则刷新，在cookie中会记录已经登录成功，刷新页面后进入菜单界面
+                if (resp.result === "success") {
+                    location.reload(); 
+                } else {
+                    outer.$login_error_message.html(resp.result); // 登录失败则显示用户名或密码不正确       
+                }
+            }
+        });
+    }
+
+    // 在远程服务器上注册的函数
+    register_on_remote() {
+    }
+
+    // 在远程服务器上登出的函数
+    logout_on_remote() {
+        // 若前端是acapp，则不需要退出，acapp中关掉游戏界面就算是退出
+        if (this.platform === "ACAPP") return false; 
+
+        // 若前端是web，则有如下的登出操作
+        $.ajax({
+            url: "https://app5894.acapp.acwing.com.cn/settings/logout/",
+            type: "GET",
+            // 退出不需要参数，因此不需要data
+            success: function(resp) {
+                console.log(resp); // 输出后端返回的结果，用于调试
+                // 后端返回的resp的result必定为success
+                if (resp.result === "success") {
+                    location.reload(); // 刷新页面
+                }
+            }
+        });
     }
 
     // 打开注册界面
@@ -839,8 +957,8 @@ class Settings {
 
                 // 若获取返回信息未成功，则应该弹出登录界面
                 else {
-                    // outer.login(); // 弹出登录界面
-                    outer.register(); // 展示注册界面
+                    outer.login(); // 弹出登录界面
+                    // outer.register(); // 展示注册界面
                 }
             }
         });

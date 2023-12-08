@@ -94,7 +94,7 @@
 }
 
 /*报错信息的样式*/
-.ac-game-settings-error-messages {
+.ac-game-settings-error-message {
     /*报错信息的字体颜色为红色，字号不宜大*/
     color: red;
     font-size: 0.8vh; 
