@@ -782,9 +782,9 @@ class Settings {
         // 索引username
         this.$register_username = this.$register.find(".ac-game-settings-username input");
         // 索引password
-        this.$register_password = this.$register.find(".ac-game-settings-password-first");
+        this.$register_password = this.$register.find(".ac-game-settings-password-first input");
         // 索引确认password
-        this.$register_password_confirm = this.$register.find(".ac-game-settings-password-second");
+        this.$register_password_confirm = this.$register.find(".ac-game-settings-password-second input");
         // 索引submit
         this.$register_submit = this.$register.find(".ac-game-settings-submit button");
         // 索引error message
@@ -838,6 +838,11 @@ class Settings {
         this.$register_login.click(function() {
             outer.login(); // 跳到注册界面
         });
+
+        // 绑定点击注册界面注册按钮的动作到注册函数
+        this.$register_submit.click(function() {
+            outer.register_on_remote();
+        });
     }
 
     // 在远程服务器上登录的函数，是一个ajax
@@ -872,6 +877,35 @@ class Settings {
 
     // 在远程服务器上注册的函数
     register_on_remote() {
+        let outer = this;
+        let username = this.$register_username.val();
+        let password = this.$register_password.val();
+        let password_confirm = this.$register_password_confirm.val();
+        
+        this.$register_error_message.empty(); // 清空error message
+
+        $.ajax({
+            url: "https://app5894.acapp.acwing.com.cn/settings/register/",
+            type: "GET", // 按理来说应该用POST，凡是改数据库都要用POST, 此处为方便调试用GET
+            data: {
+                username: username,
+                password: password,
+                password_confirm: password_confirm,
+            },
+
+            // 回调函数，后端返回的字典被传入resp种
+            success: function(resp) {
+                console.log(resp); // 输出结果，便于调试
+                // 判断是否成功
+                if (resp.result === "success") {
+                    // 刷新页面，注册成功后刷新页面就进入登录状态，打开菜单，因为register.py中有login
+                    location.reload(); 
+                } else {
+                    // 否则直接将错误信息通过error message展现出来
+                    outer.$register_error_message.html(resp.result);
+                }
+            }
+        });
     }
 
     // 在远程服务器上登出的函数
