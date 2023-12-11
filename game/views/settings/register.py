@@ -42,7 +42,7 @@ def register(request):
 
     # 创建完user, 还需创建player，默认头像：神代利世
     # django数据库创建的标准写法
-    Player.objects.create(user=user, photo="https://cdn.acwing.com/media/user/profile/photo/195843_lg_31842286d1.jpg")
+    Player.objects.create(user=user, photo="https://bkimg.cdn.bcebos.com/pic/5366d0160924ab1846bed2653dfae6cd7b890b33?x-bce-process=image/resize,m_lfit,w_536,limit_1/quality,Q_70")
     
     # 创建完user和player后登录
     login(request, user)

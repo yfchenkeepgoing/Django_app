@@ -28,7 +28,9 @@ def getinfo_web(request):
         })
     else: 
         # 每次从数据库中取出第一名玩家的信息
-        player = Player.objects.all()[0]
+        # player = Player.objects.all()[0]
+        # 应该返回当前登录用户的信息
+        player = Player.objects.get(user=user)
 
         # 返回信息
         return JsonResponse({
