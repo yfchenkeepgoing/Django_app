@@ -16,6 +16,10 @@ class Player(models.Model):
     # 还可以仿照这个样式去添加其他信息，如性别、年龄、邮箱等信息
     photo = models.URLField(max_length = 256, blank = True) 
 
+    # 加入openid，用于标识用户，是一个32位的字符串
+    # 默认为空，最大长度为50（多开几位，空间不值钱），可以为空(blank=True, null=True)
+    openid = models.CharField(default="", max_length=50, blank=True, null=True)
+
     # 用于显示每个player数据展示在admin页面中的名字
     def __str__(self):
         return str(self.user) # 直接返回用户的用户名

@@ -1,5 +1,5 @@
 from django.urls import path, include # 新添加include
-from  game.views.index import index # 将views中的总函数直接import进来
+from game.views.index import index # 将views中的总函数直接import进来
 
 urlpatterns = [
     path("", index, name="index"), # 对应上面的第二个import，由于是总函数，因此不需要路径，取名为index（全局的index）

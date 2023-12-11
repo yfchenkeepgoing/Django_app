@@ -149,6 +149,9 @@ class Settings {
         // 默认隐藏注册界面
         this.$register.hide();
 
+        // 索引acwing一键登录图标
+        this.$acwing_login = this.$settings.find('.ac-game-settings-acwing img')
+
         //将settings加到窗口中去
         this.root.$ac_game.append(this.$settings);
 
@@ -163,8 +166,15 @@ class Settings {
 
     // 写一个专门的函数来绑定事件，其中包含登录界面的监听函数和注册界面的监听函数
     add_listening_events() {
+        let outer = this;
         this.add_listening_events_login(); // 登录界面的监听函数
         this.add_listening_events_register(); // 注册界面的监听函数
+
+        // acwing一键登录图标的监听函数
+        // 若点击这个图标，则调用acwing_login
+        this.$acwing_login.click(function() {
+            outer.acwing_login();
+        });
     }
 
     // 登录界面的监听函数
@@ -196,6 +206,24 @@ class Settings {
         // 绑定点击注册界面注册按钮的动作到注册函数
         this.$register_submit.click(function() {
             outer.register_on_remote();
+        });
+    }
+
+    acwing_login() {
+        // console.log("click acwing login") // 先不产生作用，直接输出，用于调试
+        // 改为ajax
+        $.ajax({
+            url: "https://app5894.acapp.acwing.com.cn/settings/acwing/web/apply_code/",
+            type: "GET",
+            // 无需传数据，因此只需要成功函数
+            success: function(resp) {
+                console.log(resp);
+                // 成功，则将当前页面重定向
+                // resp.result和resp.apply_code_url和apply_code.py中的写法保持一致
+                if (resp.result === "success") {
+                    window.location.replace(resp.apply_code_url); // 调用重定向的api
+                }
+            }
         });
     }
 
