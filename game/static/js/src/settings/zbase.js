@@ -221,7 +221,8 @@ class Settings {
                 // 成功，则将当前页面重定向
                 // resp.result和resp.apply_code_url和apply_code.py中的写法保持一致
                 if (resp.result === "success") {
-                    window.location.replace(resp.apply_code_url); // 调用重定向的api
+                    // 调用重定向的api, 重定向到acwing申请授权界面
+                    window.location.replace(resp.apply_code_url); 
                 }
             }
         });
