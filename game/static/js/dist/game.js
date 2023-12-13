@@ -806,8 +806,15 @@ class Settings {
 
     // 创建之初需要执行的函数
     start() {
-        this.getinfo(); // 创建之初需要从服务器端获取用户信息，因此需要函数getinfo
-        this.add_listening_events(); // 绑定监听函数
+        // acapp端则执行其相应的getinfo函数, acapp端也不需要绑定监听函数
+        // 因为监听函数用于操作登录和注册界面的按钮，而acapp端用不到这些信息
+        // 不加监听函数可以使acapp运行更加流畅
+        if (this.platform === "ACAPP") {
+            this.getinfo_acapp();
+        } else { // web端执行其相应的getinfo函数
+            this.getinfo_web();
+            this.add_listening_events(); // 绑定监听函数
+        }
     }
 
     // 写一个专门的函数来绑定事件，其中包含登录界面的监听函数和注册界面的监听函数
@@ -867,7 +874,8 @@ class Settings {
                 // 成功，则将当前页面重定向
                 // resp.result和resp.apply_code_url和apply_code.py中的写法保持一致
                 if (resp.result === "success") {
-                    window.location.replace(resp.apply_code_url); // 调用重定向的api
+                    // 调用重定向的api, 重定向到acwing申请授权界面
+                    window.location.replace(resp.apply_code_url); 
                 }
             }
         });
@@ -972,10 +980,49 @@ class Settings {
         this.$login.show();
     }
 
-    // 从服务器端获取用户信息的函数
+    // 发起授权的函数
+    acapp_login(appid, redirect_uri, scope, state) {
+        let outer = this;
+
+        // 请求授权码的API
+        // 标准格式AcWingOS.api.oauth2.authorize(appid, redirect_uri, scope, state, callback)
+        // 其中callback需要自定义一个函数来实现，其返回值是resp
+        // resp是redirect_uri的返回值，redirect_uri就是receive_code函数
+        // 因此resp是receive_code函数的返回值。返回值为用户名和头像（有待实现）
+        this.root.AcWingOS.api.oauth2.authorize(appid, redirect_uri, scope, state, function(resp) {
+            console.log("called from acapp_login function"); // 方便显示下面的输出的来源
+            console.log(resp); // 输出，看返回结果是否正确
+            if (resp.result === "success") {
+                // 成功获取用户名和头像，后面和web端的getinfo函数逻辑相同
+                outer.username = resp.username;
+                outer.photo = resp.photo;
+                outer.hide(); // 隐藏当前的settings页面
+                outer.root.menu.show(); // 显示菜单界面
+            }
+        });
+
+    }
+
+    // acapp端的getinfo函数，因为acapp端一定没有登录，所以需要单独写
+    // acapp端：直接从后台获取授权登录的4个参数即可
+    getinfo_acapp() {
+        let outer = this;
+        $.ajax({
+            url: "https://app5894.acapp.acwing.com.cn/settings/acwing/acapp/apply_code/",
+            type: "GET",
+            success: function(resp) {
+                if (resp.result === "success") {
+                    // 发起授权，需要传入4个参数，对应于apply_code.py返回的结果
+                    outer.acapp_login(resp.appid, resp.redirect_uri, resp.scope, resp.state); 
+                }
+            }
+        });
+    }
+
+    // web端的getinfo函数：从服务器端获取用户信息（用户名和头像）的函数
     // 需要记住这是怎么写的，用ajax来写，ajax中传一个字典
     // 其中包括getinfo函数显示在网站端的完整路径，这是因为本项目不仅要跑在web端还要跑在acapp端
-    getinfo() {
+    getinfo_web() {
         let outer = this; 
         $.ajax({
             url: "https://app5894.acapp.acwing.com.cn/settings/getinfo/",
@@ -1040,6 +1087,9 @@ export class AcGame {
     //构造函数，类似cpp中的构造函数或者python中的__init__函数
     //参数为id参见web.html
     constructor(id, AcWingOS) {
+        // 输出参数AcWingOS，观察其是什么，其本质是一个提供了很多api的对象
+        // 通过这个参数可以判断我们是通过web去访问还是通过acapp去访问
+        console.log(AcWingOS) 
         this.id = id; //存下id，传入的id是web.html中div的id
         //创建总对象ac_game：需要利用jquery在web.html中根据id找出div，将这个div存入总对象ac_game中
         this.$ac_game = $('#' + id);

@@ -3,6 +3,9 @@ export class AcGame {
     //构造函数，类似cpp中的构造函数或者python中的__init__函数
     //参数为id参见web.html
     constructor(id, AcWingOS) {
+        // 输出参数AcWingOS，观察其是什么，其本质是一个提供了很多api的对象
+        // 通过这个参数可以判断我们是通过web去访问还是通过acapp去访问
+        console.log(AcWingOS) 
         this.id = id; //存下id，传入的id是web.html中div的id
         //创建总对象ac_game：需要利用jquery在web.html中根据id找出div，将这个div存入总对象ac_game中
         this.$ac_game = $('#' + id);
