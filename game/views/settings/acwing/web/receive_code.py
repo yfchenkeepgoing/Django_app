@@ -88,7 +88,7 @@ def receive_code_github(request):
     data = request.GET
     code = data.get('code')
     state = data.get('state')
-    print(code, state)
+    # print(code, state) # 调试用
 
     if not cache.has_key(state):
         return redirect("index")
@@ -98,55 +98,40 @@ def receive_code_github(request):
     # 下一步，通过授权码申请授权令牌access token
     apply_access_token_url = "https://github.com/login/oauth/access_token"
 
-    # # 参数列表：三个参数-appid, secret, code
-    # params = {
-    #     'client_id': "e89272f068bdd76fac67", # 即client_id，可在github oauth app设置界面中查到
-    #     'client_secret': "3130697584702eaba00a64ad6c0970a3fbf61265", # 即client_secret，可在github oauth app设置界面中查到
-    #     'code': code # 刚刚拿到的code
-    # }
+    # 参数列表：三个参数: client_id, client_secret, code
+    params = {
+        'client_id': "e89272f068bdd76fac67", # 即client_id，可在github oauth app设置界面中查到
+        'client_secret': "3130697584702eaba00a64ad6c0970a3fbf61265", # 即client_secret，可在github oauth app设置界面中查到
+        'code': code # 刚刚拿到的code，来自apply_code_github函数
+    }
 
-
-    # access_token_res = requests.post(apply_access_token_url, params=params).json()
-
-    client_id = "e89272f068bdd76fac67"  # 即client_id，可在github oauth app设置界面中查到
-    client_secret = "3130697584702eaba00a64ad6c0970a3fbf61265"  # 即client_secret，可在github oauth app设置界面中查到
-
-    # 构建请求URL和参数
-    url_with_params = apply_access_token_url + \
-        f"?client_id={client_id}&client_secret={client_secret}&code={code}"
-
+    # 在请求头中添加以下内容，否则会报错
     headers = {
         'Accept': 'application/json'
     }
 
-    # 发送请求
-    tokenResponse = requests.post(url_with_params, headers=headers)
+    access_token_res = requests.post(apply_access_token_url, params=params, headers=headers).json()
 
-    access_token = tokenResponse.json().get('access_token')
+    access_token = access_token_res['access_token']
 
-    print(tokenResponse.json())
+    # print(tokenResponse.json()) # 调试用
 
     get_userinfo_url = 'https://api.github.com/user'
 
     # 准备认证头部，包含我们的access token
     headers = {
         'Authorization': f'token {access_token}',
-        'Accept': 'application/vnd.github.v3+json',  # 使用GitHub API version 3
+        'Accept': 'application/vnd.github.v3+json',  # 使用GitHub API version 3，一个广泛使用而稳定的版本
     }
 
     # 发送请求
-    response = requests.get(get_userinfo_url, headers=headers)
+    userinfo_res = requests.get(get_userinfo_url, headers=headers).json()
 
-    user_data = response.json()
-
-    # 提取所需的信息
-    userid = user_data.get('id')
-    username = user_data.get('name')
-    photo = user_data.get('avatar_url')
-
-    # # 从返回结果中取出access_token和openid
-    # access_token = access_token_res['access_token']
-    # openid = access_token_res['openid']
+    # 提取所需的信息, 这里的userid相当于acwing一键登录中的openid，是用户的唯一标识
+    # openid取自access_token_res，但userid取自userinfo_res
+    userid = userinfo_res['id']
+    username = userinfo_res['name']
+    photo = userinfo_res['avatar_url']
 
     players = Player.objects.filter(openid=userid)
     # 若该用户已存在，则无需重新获取信息，直接登录即可
