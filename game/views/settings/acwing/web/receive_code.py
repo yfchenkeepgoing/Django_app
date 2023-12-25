@@ -84,4 +84,90 @@ def receive_code(request):
     # 重定向到主页
     return redirect("index") 
 
+def receive_code_github(request):
+    data = request.GET
+    code = data.get('code')
+    state = data.get('state')
+    print(code, state)
+
+    if not cache.has_key(state):
+        return redirect("index")
+    
+    cache.delete(state)
+
+    # 下一步，通过授权码申请授权令牌access token
+    apply_access_token_url = "https://github.com/login/oauth/access_token"
+
+    # # 参数列表：三个参数-appid, secret, code
+    # params = {
+    #     'client_id': "e89272f068bdd76fac67", # 即client_id，可在github oauth app设置界面中查到
+    #     'client_secret': "3130697584702eaba00a64ad6c0970a3fbf61265", # 即client_secret，可在github oauth app设置界面中查到
+    #     'code': code # 刚刚拿到的code
+    # }
+
+
+    # access_token_res = requests.post(apply_access_token_url, params=params).json()
+
+    client_id = "e89272f068bdd76fac67"  # 即client_id，可在github oauth app设置界面中查到
+    client_secret = "3130697584702eaba00a64ad6c0970a3fbf61265"  # 即client_secret，可在github oauth app设置界面中查到
+
+    # 构建请求URL和参数
+    url_with_params = apply_access_token_url + \
+        f"?client_id={client_id}&client_secret={client_secret}&code={code}"
+
+    headers = {
+        'Accept': 'application/json'
+    }
+
+    # 发送请求
+    tokenResponse = requests.post(url_with_params, headers=headers)
+
+    access_token = tokenResponse.json().get('access_token')
+
+    print(tokenResponse.json())
+
+    get_userinfo_url = 'https://api.github.com/user'
+
+    # 准备认证头部，包含我们的access token
+    headers = {
+        'Authorization': f'token {access_token}',
+        'Accept': 'application/vnd.github.v3+json',  # 使用GitHub API version 3
+    }
+
+    # 发送请求
+    response = requests.get(get_userinfo_url, headers=headers)
+
+    user_data = response.json()
+
+    # 提取所需的信息
+    userid = user_data.get('id')
+    username = user_data.get('name')
+    photo = user_data.get('avatar_url')
+
+    # # 从返回结果中取出access_token和openid
+    # access_token = access_token_res['access_token']
+    # openid = access_token_res['openid']
+
+    players = Player.objects.filter(openid=userid)
+    # 若该用户已存在，则无需重新获取信息，直接登录即可
+    if players.exists(): 
+        login(request, players[0].user) # login函数的统一用法
+        return redirect("index") # 重定向到主页
+
+    # 根据用户信息完成注册
+    # 游戏的用户名不可重复，但acwing的用户名可能和直接通过网站注册的用户名是重复的
+    # 解决方法：出现重名时直接在后来的名字末尾加上一位随机数，若再重复则再加一位随机数，以此类推
+    while User.objects.filter(username=username).exists(): # 找到一个新用户名
+        username += str(randint(0, 9))
+    
+    # 创建新用户
+    user = User.objects.create(username=username)
+    # 在用户的基础上创建玩家, create完后会自动保存到数据库中
+    player = Player.objects.create(user=user, photo=photo, openid=userid)
+
+    # 根据新创建的用户信息登录
+    login(request, user)
+
+    return redirect("index")
+
 

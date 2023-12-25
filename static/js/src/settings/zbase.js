@@ -59,6 +59,15 @@ class Settings {
             </div>
         </div>
 
+        <br>
+        <div class="ac-game-settings-github">
+            <img width="30" src="https://app5894.acapp.acwing.com.cn/static/image/settings/github_login_logo.png">
+            <br>
+            <div>
+                GitHub一键登录
+            </div>
+        </div>
+
     </div>
 
     <div class="ac-game-settings-register">
@@ -107,6 +116,15 @@ class Settings {
             </div>
         </div>
 
+        <br>
+        <div class="ac-game-settings-github">
+            <img width="30" src="https://app5894.acapp.acwing.com.cn/static/image/settings/github_login_logo.png">
+            <br>
+            <div>
+                GitHub一键登录
+            </div>
+        </div>
+
     </div>
 
 </div>
@@ -152,6 +170,9 @@ class Settings {
         // 索引acwing一键登录图标
         this.$acwing_login = this.$settings.find('.ac-game-settings-acwing img')
 
+        // 索引github一键登录图标
+        this.$github_login = this.$settings.find('.ac-game-settings-github img')
+
         //将settings加到窗口中去
         this.root.$ac_game.append(this.$settings);
 
@@ -181,6 +202,11 @@ class Settings {
         // 若点击这个图标，则调用acwing_login
         this.$acwing_login.click(function() {
             outer.acwing_login();
+        });
+
+        // github一键登录图标的监听函数
+        this.$github_login.click(function() {
+            outer.github_login();
         });
     }
 
@@ -216,11 +242,31 @@ class Settings {
         });
     }
 
+    // acwing一键登录的前端和后端交互的函数
     acwing_login() {
         // console.log("click acwing login") // 先不产生作用，直接输出，用于调试
         // 改为ajax
         $.ajax({
             url: "https://app5894.acapp.acwing.com.cn/settings/acwing/web/apply_code/",
+            type: "GET",
+            // 无需传数据，因此只需要成功函数
+            success: function(resp) {
+                console.log(resp);
+                // 成功，则将当前页面重定向
+                // resp.result和resp.apply_code_url和apply_code.py中的写法保持一致
+                if (resp.result === "success") {
+                    // 调用重定向的api, 重定向到acwing申请授权界面
+                    window.location.replace(resp.apply_code_url); 
+                }
+            }
+        });
+    }
+
+    // github一键登录的前端和后端交互的函数
+    github_login() {
+        console.log("click github login") // 用于调试
+        $.ajax({
+            url: "https://app5894.acapp.acwing.com.cn/settings/acwing/web/apply_code_github/",
             type: "GET",
             // 无需传数据，因此只需要成功函数
             success: function(resp) {

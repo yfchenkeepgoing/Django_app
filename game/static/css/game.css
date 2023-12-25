@@ -16,7 +16,7 @@
 
 /*登录界面*/
 .ac-game-settings-login {
-    height: 41vh; /*41%的高度比较好看*/
+    height: 50vh; /*41%的高度比较好看*/
     width: 20vw; /*20%的高度比较好看*/
 
     /*居中，登录界面是一个矩形，其中心距离整个界面的上方是50%，距离整个界面的左边是50%*/
@@ -57,6 +57,12 @@
 
 /*第三方授权登录的按钮*/
 .ac-game-settings-acwing {
+    display: block;
+    height: 7vh;
+}
+
+/*GitHub授权登录的按钮*/
+.ac-game-settings-github {
     display: block;
     height: 7vh;
 }
@@ -124,8 +130,27 @@
     display: block;
 }
 
+/*创建github一键登录图片的格式*/
+.ac-game-settings-github > img {
+    /*居中*/
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);/*将锚点从左上角改为中心*/
+    cursor: pointer; /*鼠标由箭头改为小手形状*/
+    display: block;
+}
+
 /*acwing一键登录的格式*/
 .ac-game-settings-acwing > div {
+    color: white;
+    font-size: 1.5vh;
+    text-align: center;/*文本居中*/
+    display: block;
+}
+
+/*github一键登录的格式*/
+.ac-game-settings-github > div {
     color: white;
     font-size: 1.5vh;
     text-align: center;/*文本居中*/
@@ -135,7 +160,7 @@
 /*注册界面*/
 .ac-game-settings-register {
     /*注册界面有三行：用户名、密码和确认密码，登录界面只有两行：用户名、密码，因此注册界面height会更大*/
-    height: 49vh; 
+    height: 57vh; 
     width: 20vw; /*20%的高度比较好看*/
 
     /*居中，登录界面是一个矩形，其中心距离整个界面的上方是50%，距离整个界面的左边是50%*/

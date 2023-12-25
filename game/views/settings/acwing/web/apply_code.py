@@ -40,3 +40,32 @@ def apply_code(request):
         'result': "success",
         'apply_code_url': apply_code_url + "?appid=%s&redirect_uri=%s&scope=%s&state=%s" % (appid, redirect_uri, scope, state)
     })
+
+def apply_code_github(request):
+    # 参数appid
+    client_id = "e89272f068bdd76fac67"
+
+    # 参数redirect_uri：重新编码url，将其中的特殊字符转换为一般字符，避免后续处理url时特殊字符导致的报错
+    # quote内部的url是接收授权码code的链接
+    redirect_uri = quote("https://app5894.acapp.acwing.com.cn/settings/acwing/web/receive_code_github/")
+
+    # 参数scope
+    scope = "read:user"
+
+    # 参数 state，设为一个8位的随机值
+    state = get_state()
+
+    # allow_signup = false
+
+    # state在传给acwing前需要先存下来
+    # 未来从acwing接收到state，就去redis中查找改state是否存在
+    # 存在则说明code来自acwing服务器，否则说明code来自陌生人的攻击
+    cache.set(state, True, 7200) # 值随便设置，可以设置为true，有效期2小时：7200秒
+
+    apply_code_url = "https://github.com/login/oauth/authorize"
+
+    return JsonResponse({
+        'result': "success",
+        'apply_code_url': apply_code_url + "?client_id=%s&redirect_uri=%s&scope=%s&state=%s" % (client_id, redirect_uri, scope, state)
+    })
+    
