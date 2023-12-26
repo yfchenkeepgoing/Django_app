@@ -55,18 +55,20 @@ class AcGameMenu{
             //console.log("click single mode"); //先不写函数，先输出一句话
             outer.hide(); //关闭当前页面
             //outer.root是总class的对象ac_game，ac_game中有对象playground，调用playground中的show函数，显示playground界面
-            outer.root.playground.show();
+            outer.root.playground.show("single mode"); // 加入参数：模式名
         });
 
         //同理，当多人模式按钮被点击（click）时，会自动调用以下函数
         this.$multi_mode.click(function(){
-            console.log("click multi mode"); //先不写函数，先输出一句话
+            // console.log("click multi mode"); //先不写函数，先输出一句话
+            outer.hide(); // 关闭菜单页面
+            outer.root.playground.show("multi mode");
         });
 
         //同理，当设置按钮被点击（click）时，会自动调用以下函数
         // 设置按钮暂时被改为登出按钮
         this.$settings.click(function(){
-            console.log("click settings"); //先不写函数，先输出一句话
+            // console.log("click settings"); //先不写函数，先输出一句话
             outer.root.settings.logout_on_remote(); // 点击登出按钮则服务器端登出
         });
     }
@@ -266,7 +268,7 @@ class Player extends AcGameObject {
     //需要传入的参数：游戏场景playground，2d游戏需要传入球的中心坐标（x, y），3d游戏还需要传入z，有朝向的话还需要传入朝向
     //还需传入球的半径、颜色、玩家的移速（每秒移动占地图高度的百分比，适合联机时大家用不同分辨率的电脑）、是否是自己
     //自己的操作方式是键盘和鼠标，敌人的操作方式是通过网络传过来的，因此需要标签表示是否是自己
-    constructor(playground, x, y, radius, color, speed, is_me) { 
+    constructor(playground, x, y, radius, color, speed, character, username, photo) { 
         super(); //调用基类的构造函数，将自身通过AC_GAME_OBJECTS.push(this)插入到AC_GAME_OBJECTS这个数组中
         //保存player的playground和横纵坐标
         this.playground = playground;
@@ -291,7 +293,11 @@ class Player extends AcGameObject {
         this.radius = radius;
         this.color = color;
         this.speed = speed;
-        this.is_me = is_me;
+        this.character = character;
+
+        // 用户名和照片
+        this.username = username;
+        this.photo = photo;
 
         // 移动时涉及浮点预算，需要eps, eps表示误差在多少以内就算0
         // eps统一为1%的scale
@@ -303,17 +309,17 @@ class Player extends AcGameObject {
         // 判断当前选择了什么技能
         this.cur_skill = null; // 当前并未选择技能
 
-        // 加载用户头像
-        if (this.is_me) {
+        // 只有用户为robot时，不需要加载用户头像
+        if (this.character !== "robot") {
             this.img = new Image();
             // this.img.src = "图片地址";
-            this.img.src = this.playground.root.settings.photo;
+            this.img.src = this.photo;
         }
     }
 
     //需要start和update函数
     start() {
-        if (this.is_me) { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
+        if (this.character === "me") { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
             this.add_listening_events(); // 监听函数只能加给自己，不能加给敌人
         } else { // 敌人用ai操纵
             let tx = Math.random() * this.playground.width / this.playground.scale; // random会返回一个0-1之间的随机数
@@ -446,8 +452,8 @@ class Player extends AcGameObject {
         this.spent_time += this.timedelta / 1000; // 时间累计
 
         // 要求每五秒钟发射一枚炮弹，本函数每一秒钟被调用60次，因此每次被调用时发射炮弹的概率是1/300
-        // 保证五秒钟之后敌人开始攻击player
-        if (!this.is_me && this.spent_time > 4 && Math.random() < 1 / 300.0) {
+        // 保证五秒钟之后机器人开始攻击player
+        if (this.character === "robot" && this.spent_time > 4 && Math.random() < 1 / 300.0) {
             // 随机产生一个被针对的玩家
             let player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)]; 
 
@@ -474,7 +480,7 @@ class Player extends AcGameObject {
                 // 不需要移动时模长和单位速度的两个分量都为0
                 this.move_length = 0;
                 this.vx = this.vy = 0;
-                if (!this.is_me) { // 若是敌人（由AI操控），则需要生成新的随机目的地
+                if (this.character === "robot") { // 若是机器人（由AI操控），则需要生成新的随机目的地
                     let tx = Math.random() * this.playground.width / this.playground.scale; // random会返回一个0-1之间的随机数
                     let ty = Math.random() * this.playground.height / this.playground.scale;
                     this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上
@@ -497,7 +503,8 @@ class Player extends AcGameObject {
     render() {
         let scale = this.playground.scale;
 
-        if (this.is_me) {
+        // 机器人渲染颜色，自己和敌人均渲染图片
+        if (this.character !== "robot") {
             // 将图像渲染到代表player的圆圈上
             this.ctx.save();
             this.ctx.beginPath();
@@ -674,31 +681,41 @@ class Fireball extends AcGameObject {
     }
 
     //游戏界面也需要实现一个show函数和一个hide函数
-    show() { // 打开playground界面
+    show(mode) { // 打开playground界面
         this.$playground.show();
         // 将playground对象加入到总对象ac_game中
         // 未来可能会show多次，不能每次show都append一个新元素，因此将下面的话移到构造函数中
         // this.root.$ac_game.append(this.$playground);
 
         // 界面打开后需要resize一遍
-        this.resize();
+        // this.resize();
 
         this.width = this.$playground.width(); //记下界面的宽度
         this.height = this.$playground.height(); //记下界面的高度
         // 生成一个GameMap类的对象game_map，用于放置画布canvas，传入的参数是AcGamePlayground本身
         this.game_map = new GameMap(this); 
 
+        this.resize(); // 将resize调整到产生game_map之后，这样resize也能作用到game_map
+
         this.players = []; //创建数组用于存储玩家
         // 创建Player类的对象，并将其插入存储玩家的数组中，其中心坐标在游戏界面的中心，其半径是游戏界面高度的0.05
         // 颜色为白色，移速是每秒移动height的0.15，是自己，因此is_me = true
-        this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.15, true));
+        // 三种角色：自己、机器人、敌人，自己用me，机器人用robot，敌人用enemy
+        this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.15, "me", this.root.settings.username, this.root.settings.photo));
         
-        // 6人一局，创建5个敌人
-        // 注意敌人不是自己，所以最后一个参数是false，敌人的颜色换为蓝色
-        for (let i = 0; i < 5; i ++ ) {
-            // 颜色随机，blue->this.get_random_color()
-            this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.15, false));
+        // 单人模式，则加入机器人
+        if (mode === "single mode") {
+            // 6人一局，创建5个敌人
+            // 注意敌人不是自己，所以最后一个参数是false，敌人的颜色换为蓝色
+            for (let i = 0; i < 5; i ++ ) {
+                // 颜色随机，blue->this.get_random_color()
+                this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "robot"));
+            }
         }
+        else if (mode === "multi mode") {
+
+        }
+
 
     }
 

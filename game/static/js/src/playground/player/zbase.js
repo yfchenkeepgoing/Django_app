@@ -4,7 +4,7 @@ class Player extends AcGameObject {
     //需要传入的参数：游戏场景playground，2d游戏需要传入球的中心坐标（x, y），3d游戏还需要传入z，有朝向的话还需要传入朝向
     //还需传入球的半径、颜色、玩家的移速（每秒移动占地图高度的百分比，适合联机时大家用不同分辨率的电脑）、是否是自己
     //自己的操作方式是键盘和鼠标，敌人的操作方式是通过网络传过来的，因此需要标签表示是否是自己
-    constructor(playground, x, y, radius, color, speed, is_me) { 
+    constructor(playground, x, y, radius, color, speed, character, username, photo) { 
         super(); //调用基类的构造函数，将自身通过AC_GAME_OBJECTS.push(this)插入到AC_GAME_OBJECTS这个数组中
         //保存player的playground和横纵坐标
         this.playground = playground;
@@ -29,7 +29,11 @@ class Player extends AcGameObject {
         this.radius = radius;
         this.color = color;
         this.speed = speed;
-        this.is_me = is_me;
+        this.character = character;
+
+        // 用户名和照片
+        this.username = username;
+        this.photo = photo;
 
         // 移动时涉及浮点预算，需要eps, eps表示误差在多少以内就算0
         // eps统一为1%的scale
@@ -41,17 +45,17 @@ class Player extends AcGameObject {
         // 判断当前选择了什么技能
         this.cur_skill = null; // 当前并未选择技能
 
-        // 加载用户头像
-        if (this.is_me) {
+        // 只有用户为robot时，不需要加载用户头像
+        if (this.character !== "robot") {
             this.img = new Image();
             // this.img.src = "图片地址";
-            this.img.src = this.playground.root.settings.photo;
+            this.img.src = this.photo;
         }
     }
 
     //需要start和update函数
     start() {
-        if (this.is_me) { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
+        if (this.character === "me") { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
             this.add_listening_events(); // 监听函数只能加给自己，不能加给敌人
         } else { // 敌人用ai操纵
             let tx = Math.random() * this.playground.width / this.playground.scale; // random会返回一个0-1之间的随机数
@@ -184,8 +188,8 @@ class Player extends AcGameObject {
         this.spent_time += this.timedelta / 1000; // 时间累计
 
         // 要求每五秒钟发射一枚炮弹，本函数每一秒钟被调用60次，因此每次被调用时发射炮弹的概率是1/300
-        // 保证五秒钟之后敌人开始攻击player
-        if (!this.is_me && this.spent_time > 4 && Math.random() < 1 / 300.0) {
+        // 保证五秒钟之后机器人开始攻击player
+        if (this.character === "robot" && this.spent_time > 4 && Math.random() < 1 / 300.0) {
             // 随机产生一个被针对的玩家
             let player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)]; 
 
@@ -212,7 +216,7 @@ class Player extends AcGameObject {
                 // 不需要移动时模长和单位速度的两个分量都为0
                 this.move_length = 0;
                 this.vx = this.vy = 0;
-                if (!this.is_me) { // 若是敌人（由AI操控），则需要生成新的随机目的地
+                if (this.character === "robot") { // 若是机器人（由AI操控），则需要生成新的随机目的地
                     let tx = Math.random() * this.playground.width / this.playground.scale; // random会返回一个0-1之间的随机数
                     let ty = Math.random() * this.playground.height / this.playground.scale;
                     this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上
@@ -235,7 +239,8 @@ class Player extends AcGameObject {
     render() {
         let scale = this.playground.scale;
 
-        if (this.is_me) {
+        // 机器人渲染颜色，自己和敌人均渲染图片
+        if (this.character !== "robot") {
             // 将图像渲染到代表player的圆圈上
             this.ctx.save();
             this.ctx.beginPath();

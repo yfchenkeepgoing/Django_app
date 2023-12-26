@@ -55,18 +55,20 @@ class AcGameMenu{
             //console.log("click single mode"); //先不写函数，先输出一句话
             outer.hide(); //关闭当前页面
             //outer.root是总class的对象ac_game，ac_game中有对象playground，调用playground中的show函数，显示playground界面
-            outer.root.playground.show();
+            outer.root.playground.show("single mode"); // 加入参数：模式名
         });
 
         //同理，当多人模式按钮被点击（click）时，会自动调用以下函数
         this.$multi_mode.click(function(){
-            console.log("click multi mode"); //先不写函数，先输出一句话
+            // console.log("click multi mode"); //先不写函数，先输出一句话
+            outer.hide(); // 关闭菜单页面
+            outer.root.playground.show("multi mode");
         });
 
         //同理，当设置按钮被点击（click）时，会自动调用以下函数
         // 设置按钮暂时被改为登出按钮
         this.$settings.click(function(){
-            console.log("click settings"); //先不写函数，先输出一句话
+            // console.log("click settings"); //先不写函数，先输出一句话
             outer.root.settings.logout_on_remote(); // 点击登出按钮则服务器端登出
         });
     }
