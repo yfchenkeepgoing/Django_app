@@ -15,7 +15,7 @@ class Fireball extends AcGameObject {
         this.speed = speed; 
         this.move_length = move_length; // move_length为火球的移动距离(射程)
         this.damage = damage;
-        this.eps = 0.1 // 精度，小于0.1就认为是0
+        this.eps = 0.01 // 相对值，真实值为height的0.01倍
     }
 
     start() {
@@ -76,8 +76,10 @@ class Fireball extends AcGameObject {
     }
 
     render() { // 类似player的zbase.js中的render函数
+        let scale = this.playground.scale;
+
         this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
     }

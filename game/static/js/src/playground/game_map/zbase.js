@@ -25,6 +25,17 @@ class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject�
 
     }
 
+    // gamemap中的resize函数可以动态地修改黑框（地图）的长宽
+    resize() {
+        this.ctx.canvas.width = this.playground.width;
+        this.ctx.canvas.height = this.playground.height;
+
+        // 为避免改变窗口大小后游戏界面由灰色变为黑色的渐变过程，我们每次完成resize后
+        // 直接强行涂上一层完全不透明的黑色蒙板
+        this.ctx.fillStyle = "rgba(0, 0, 0, 1)"; 
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
     update() {
         this.render();
     }

@@ -31,8 +31,9 @@ class Player extends AcGameObject {
         this.speed = speed;
         this.is_me = is_me;
 
-        //移动时涉及浮点预算，需要eps, eps表示误差在多少以内就算0
-        this.eps = 0.1; //误差在0.1以内就算0
+        // 移动时涉及浮点预算，需要eps, eps表示误差在多少以内就算0
+        // eps统一为1%的scale
+        this.eps = 0.01; //误差在0.1以内就算0
 
         // 倒计时
         this.spent_time = 0;
@@ -53,8 +54,8 @@ class Player extends AcGameObject {
         if (this.is_me) { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
             this.add_listening_events(); // 监听函数只能加给自己，不能加给敌人
         } else { // 敌人用ai操纵
-            let tx = Math.random() * this.playground.width; // random会返回一个0-1之间的随机数
-            let ty = Math.random() * this.playground.height;
+            let tx = Math.random() * this.playground.width / this.playground.scale; // random会返回一个0-1之间的随机数
+            let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上
         }
     }
@@ -78,12 +79,12 @@ class Player extends AcGameObject {
                 // 可以看看鼠标点击有没有出发move_to函数，不要用this，用outer
                 // 若在此处用this, 则这个this指的是mousedown函数本身，外面的this才是指整个class
                 // 将鼠标点击的位置e.clientX, e.clientY传给move_to函数的参数tx, ty
-                outer.move_to(e.clientX - rect.left, e.clientY - rect.top); // 鼠标坐标的api: e.clientX和e.clientY
+                outer.move_to((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale); // 鼠标坐标的api: e.clientX和e.clientY
                 // 注意，e.clientX是整个屏幕的坐标，但player的x坐标是画布中的相对坐标
                 // 需要将大坐标系中的绝对坐标映射为小坐标系中的相对坐标
             } else if (e.which === 1) { // 若点击的是鼠标左键
                 if (outer.cur_skill === "fireball") { // 若当前技能是fireball，则应该释放一个火球
-                    outer.shoot_fireball(e.clientX- rect.left, e.clientY- rect.top); // 鼠标点击的坐标是e.clientX和e.clientY
+                    outer.shoot_fireball((e.clientX- rect.left) / outer.playground.scale, (e.clientY- rect.top) / outer.playground.scale); // 鼠标点击的坐标是e.clientX和e.clientY
                 }
                 outer.cur_skill = null; // 当前技能被释放掉
             }
@@ -104,18 +105,18 @@ class Player extends AcGameObject {
         // console.log("shoot fireball", tx, ty);
         // 先定义关于火球的各种参数
         let x = this.x, y = this.y; // 火球中心点的坐标和player中心点的坐标相同
-        let radius = this.playground.height * 0.01; // player的半径是0.05，火球的半径定为0.01
+        let radius = 0.01; // player的半径是0.05，火球的半径定为0.01
 
         // vx, vy由angle确定
         let angle = Math.atan2(ty - this.y, tx - this.x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
         let color = "orange"; // 火球的颜色为橘黄色
-        let speed = this.playground.height * 0.5; // 人的速度是height * 0.15, 火球的速度应该超过人
-        let move_length = this.playground.height * 1; // 火球的最大射程是高度的1倍
+        let speed = 0.5; // 人的速度是height * 0.15, 火球的速度应该超过人
+        let move_length = 1; // 火球的最大射程是高度的1倍
 
         // 创建火球，传入上述参数, 新加入火球的伤害值参数，每个玩家的半径是总高度的0.05，因此伤害值可以定义为总高度的0.01
         // 相当于每次可以打掉玩家20%的血量
-        new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01);
+        new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
     }
 
     // 求(x, y)和(tx, ty)间的欧几里得距离
@@ -158,7 +159,7 @@ class Player extends AcGameObject {
 
         // player的血量就是其半径，因此攻击后player的新半径为原本的半径-伤害值
         this.radius -= damage;
-        if (this.radius < 10) { // 如果player的半径小于10像素，则认为player已死
+        if (this.radius < this.eps) { // 如果player的半径小于eps，则认为player已死
             this.destroy();
             return false; // 不再处理后续
         }
@@ -174,6 +175,12 @@ class Player extends AcGameObject {
     }
 
     update() {
+        this.update_move();
+        this.render();
+    }
+
+    // 负责更新玩家移动
+    update_move() {
         this.spent_time += this.timedelta / 1000; // 时间累计
 
         // 要求每五秒钟发射一枚炮弹，本函数每一秒钟被调用60次，因此每次被调用时发射炮弹的概率是1/300
@@ -192,7 +199,7 @@ class Player extends AcGameObject {
 
         // 新的优先级，若this.damage_speed依然存在，则player的速度清零, player停下来
         // 在damage_speed消失( < 10 )之前，被击中的player暂时无法有自己移动的距离move_length
-        if (this.damage_speed > 10) {
+        if (this.damage_speed > this.eps) {
             this.vx = this.vy = 0;
             this.move_length = 0; // player被击中后停下，然后一直往后退，无法操作，知道damage_speed衰减到0
             this.x += this.damage_x * this.damage_speed * this.timedelta / 1000; // 有伤害，则优先用伤害移动自己
@@ -206,8 +213,8 @@ class Player extends AcGameObject {
                 this.move_length = 0;
                 this.vx = this.vy = 0;
                 if (!this.is_me) { // 若是敌人（由AI操控），则需要生成新的随机目的地
-                    let tx = Math.random() * this.playground.width; // random会返回一个0-1之间的随机数
-                    let ty = Math.random() * this.playground.height;
+                    let tx = Math.random() * this.playground.width / this.playground.scale; // random会返回一个0-1之间的随机数
+                    let ty = Math.random() * this.playground.height / this.playground.scale;
                     this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上
                 }
             } else {
@@ -222,25 +229,26 @@ class Player extends AcGameObject {
                 this.move_length -= moved; // 每次移动的距离需要从总移动距离中减去
             }
         }
-        this.render();
     }
 
     //渲染函数render
     render() {
+        let scale = this.playground.scale;
+
         if (this.is_me) {
             // 将图像渲染到代表player的圆圈上
             this.ctx.save();
             this.ctx.beginPath();
-            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
             this.ctx.stroke();
             this.ctx.clip();
-            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2); 
+            this.ctx.drawImage(this.img, (this.x - this.radius) * scale, (this.y - this.radius) * scale, this.radius * 2 * scale, this.radius * 2 * scale); 
             this.ctx.restore();
         }
         else {
             //查看canvas教程，找到画圆的方法
             this.ctx.beginPath();
-            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);  //arc(x,y,r,start,stop)
+            this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);  //arc(x,y,r,start,stop)
             this.ctx.fillStyle = this.color; //设置颜色
             this.ctx.fill(); //填入颜色
             //玩家也要每一帧中都画一次，因此需要在update函数中调用render函数

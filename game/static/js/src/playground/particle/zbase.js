@@ -15,7 +15,7 @@ class Particle extends AcGameObject {
         this.move_length = move_length;
         // 粒子效果也有一个逐渐变慢的过程，因此也需要一个摩擦力
         this.friction = 0.9;
-        this.eps = 1;
+        this.eps = 0.01; // 相对值，真实值为height * 0.01
     }
 
     // 第一帧
@@ -42,8 +42,10 @@ class Particle extends AcGameObject {
 
     //渲染函数，和其他类中的render函数完全相同
     render() {
+        let scale = this.playground.scale;
+
         this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
     }
