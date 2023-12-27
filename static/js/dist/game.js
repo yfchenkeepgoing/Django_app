@@ -618,6 +618,34 @@ class Fireball extends AcGameObject {
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
     }
+}class MultiPlayerSocket {
+    // 构造函数，传入参数playground，方便与地图中的其他元素产生关联
+    constructor(playground) {
+        this.playground = playground;
+
+        // 建立wss的连接，连接地址为项目的域名，并将其中的https改为wss，在域名后面添加routing.py中的wss/multiplayer/
+        // 注意若routing.py中以\结尾，则下面也需要以\结尾，ws协议的书写规范比http协议要求更为严格
+        this.ws = new WebSocket("wss://app5894.acapp.acwing.com.cn/wss/multiplayer/");
+
+        this.start(); // 调用start函数
+    }
+
+    start() {
+
+    }
+
+    // 前端向后端发送create player的函数，前端作为发送者
+    send_create_player() {
+        // 将json封装为字符串，api是JSON.stringify
+        this.ws.send(JSON.stringify({
+            'message': "hello acapp server",
+        }));
+    }
+
+    // 后端向另一个前端发送create player的函数，另一个前端作为接收者
+    receive_create_player() {
+
+    }
 }class AcGamePlayground {
     constructor(root) {
         this.root = root; //存下root
@@ -682,6 +710,7 @@ class Fireball extends AcGameObject {
 
     //游戏界面也需要实现一个show函数和一个hide函数
     show(mode) { // 打开playground界面
+        let outer = this;
         this.$playground.show();
         // 将playground对象加入到总对象ac_game中
         // 未来可能会show多次，不能每次show都append一个新元素，因此将下面的话移到构造函数中
@@ -713,10 +742,15 @@ class Fireball extends AcGameObject {
             }
         }
         else if (mode === "multi mode") {
+            // 将MultiPlayerSocket添加到playground中
+            this.mps = new MultiPlayerSocket(this); // mps: multi player socket
 
+            // 尝试前端向后端发送一个消息，要等待链接创建成功再发送
+            // onopen函数：链接创建成功时会回调本函数
+            this.mps.ws.onopen = function() {
+                outer.mps.send_create_player();
+            };
         }
-
-
     }
 
     hide() {  // 关闭playground界面

@@ -62,6 +62,7 @@ class AcGamePlayground {
 
     //游戏界面也需要实现一个show函数和一个hide函数
     show(mode) { // 打开playground界面
+        let outer = this;
         this.$playground.show();
         // 将playground对象加入到总对象ac_game中
         // 未来可能会show多次，不能每次show都append一个新元素，因此将下面的话移到构造函数中
@@ -93,10 +94,15 @@ class AcGamePlayground {
             }
         }
         else if (mode === "multi mode") {
+            // 将MultiPlayerSocket添加到playground中
+            this.mps = new MultiPlayerSocket(this); // mps: multi player socket
 
+            // 尝试前端向后端发送一个消息，要等待链接创建成功再发送
+            // onopen函数：链接创建成功时会回调本函数
+            this.mps.ws.onopen = function() {
+                outer.mps.send_create_player();
+            };
         }
-
-
     }
 
     hide() {  // 关闭playground界面
