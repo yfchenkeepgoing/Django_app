@@ -14,6 +14,23 @@ class AcGameObject {
         //由于部分不标准的浏览器的requestAnimationFrame函数不是每秒钟调用60次，因此物体的移动速度最好用时间衡量，而不用帧来衡量，因此需要统计两帧之间的时间间隔
         //玩家在移动时的速度用时间去衡量
         //timedelta很容易算，因为重绘每一帧都会给一个时刻timestamp
+
+        // 需要同步的所有东西的唯一id
+        this.uuid = this.create_uuid();
+
+        // console.log(this.uuid); // 调试
+    }
+
+    // 创建唯一编号的函数
+    // 可以随机一个8位数，出现重复的概率很低，可以认为它是唯一的
+    create_uuid() {
+        let res = "";
+        for (let i = 0; i < 8; i ++ ) {
+            // Math.random()返回[0, 1)之间的随机数, floor下取整, parseInt将其转换为int
+            let x = parseInt(Math.floor(Math.random() * 10)); 
+            res += x;
+        }
+        return res;
     }
 
     //物体会有三个函数

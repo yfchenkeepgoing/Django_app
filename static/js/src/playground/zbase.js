@@ -96,6 +96,7 @@ class AcGamePlayground {
         else if (mode === "multi mode") {
             // 将MultiPlayerSocket添加到playground中
             this.mps = new MultiPlayerSocket(this); // mps: multi player socket
+            this.mps.uuid = this.players[0].uuid; // players[0]是自己，始终是第一个被加入到数组中的
 
             // 尝试前端向后端发送一个消息，要等待链接创建成功再发送
             // onopen函数：链接创建成功时会回调本函数

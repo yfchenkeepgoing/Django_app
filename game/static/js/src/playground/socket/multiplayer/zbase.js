@@ -15,10 +15,20 @@ class MultiPlayerSocket {
     }
 
     // 前端向后端发送create player的函数，前端作为发送者
-    send_create_player() {
+    // 本函数是创建当前玩家的函数
+    send_create_player(username, photo) {
+        let outer = this;
+
         // 将json封装为字符串，api是JSON.stringify
         this.ws.send(JSON.stringify({
-            'message': "hello acapp server",
+            // 'message': "hello acapp server", // 调试用
+            // 当前向服务器传递的信息
+            'event': "create_player",
+            // 此uuid是由playground/zbase.js中的this.mps.uuid = this.players[0].uuid赋值的
+            // 因为mps就是class MultiPlayerSocket的对象
+            'uuid': outer.uuid, 
+            'username': username,
+            'photo': photo,
         }));
     }
 

@@ -99,6 +99,23 @@ class AcGameObject {
         //由于部分不标准的浏览器的requestAnimationFrame函数不是每秒钟调用60次，因此物体的移动速度最好用时间衡量，而不用帧来衡量，因此需要统计两帧之间的时间间隔
         //玩家在移动时的速度用时间去衡量
         //timedelta很容易算，因为重绘每一帧都会给一个时刻timestamp
+
+        // 需要同步的所有东西的唯一id
+        this.uuid = this.create_uuid();
+
+        // console.log(this.uuid); // 调试
+    }
+
+    // 创建唯一编号的函数
+    // 可以随机一个8位数，出现重复的概率很低，可以认为它是唯一的
+    create_uuid() {
+        let res = "";
+        for (let i = 0; i < 8; i ++ ) {
+            // Math.random()返回[0, 1)之间的随机数, floor下取整, parseInt将其转换为int
+            let x = parseInt(Math.floor(Math.random() * 10)); 
+            res += x;
+        }
+        return res;
     }
 
     //物体会有三个函数
@@ -636,9 +653,16 @@ class Fireball extends AcGameObject {
 
     // 前端向后端发送create player的函数，前端作为发送者
     send_create_player() {
+        let outer = this;
+
         // 将json封装为字符串，api是JSON.stringify
         this.ws.send(JSON.stringify({
-            'message': "hello acapp server",
+            // 'message': "hello acapp server", // 调试用
+            // 当前向服务器传递的信息
+            'event': "create player",
+            // 此uuid是由playground/zbase.js中的this.mps.uuid = this.players[0].uuid赋值的
+            // 因为mps就是class MultiPlayerSocket的对象
+            'uuid': outer.uuid, 
         }));
     }
 
@@ -744,6 +768,7 @@ class Fireball extends AcGameObject {
         else if (mode === "multi mode") {
             // 将MultiPlayerSocket添加到playground中
             this.mps = new MultiPlayerSocket(this); // mps: multi player socket
+            this.mps.uuid = this.players[0].uuid; // players[0]是自己，始终是第一个被加入到数组中的
 
             // 尝试前端向后端发送一个消息，要等待链接创建成功再发送
             // onopen函数：链接创建成功时会回调本函数

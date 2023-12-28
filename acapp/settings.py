@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-tyj)7c78q1cv@0jz+m4$2(o5btsx6byr7@dbzgq165mk^cl9#$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["8.208.32.123", "localhost", "app5894.acapp.acwing.com.cn"]
+ALLOWED_HOSTS = ["8.208.32.123", "20.123.135.13", "localhost", "app5894.acapp.acwing.com.cn"]
 
 
 # Application definition
@@ -159,3 +159,5 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+ROOM_CAPCITY = 3 # 每个room的人数上限，暂定为3人，方便调试
