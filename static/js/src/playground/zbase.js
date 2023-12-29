@@ -100,8 +100,9 @@ class AcGamePlayground {
 
             // 尝试前端向后端发送一个消息，要等待链接创建成功再发送
             // onopen函数：链接创建成功时会回调本函数
+            // send_create_player函数：创建当前玩家
             this.mps.ws.onopen = function() {
-                outer.mps.send_create_player();
+                outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
             };
         }
     }

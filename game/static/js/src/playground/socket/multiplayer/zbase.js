@@ -11,7 +11,29 @@ class MultiPlayerSocket {
     }
 
     start() {
+        this.receive();
+    }
 
+    // 接收后端发送到前端的当前玩家的信息的函数
+    receive() {
+        let outer = this; 
+
+        // 在前端接收wss协议的信息的api：onmessage
+        this.ws.onmessage = function(e) {
+            // 解析后端向前端传输的信息, 此处是将字符串变成字典（后端的index.py中是将字典变为字符串）
+            let data = JSON.parse(e.data);
+            // console.log(data); // 输出data，用于调试
+
+            // 当前玩家本人并不需要接收到后端发送来的自己的消息，将这个消息pass掉即可
+            let uuid = data.uuid;
+            if (uuid === outer.uuid) return false;
+
+            // 对后端发来的信息的event类型也进行判断，判断是否是create_player
+            let event = data.event;
+            if (event === "create_player") {
+                outer.receive_create_player(uuid, data.username, data.photo); // 调用本地处理create_player的函数
+            }
+        };
     }
 
     // 前端向后端发送create player的函数，前端作为发送者
@@ -32,8 +54,24 @@ class MultiPlayerSocket {
         }));
     }
 
-    // 后端向另一个前端发送create player的函数，另一个前端作为接收者
-    receive_create_player() {
+    // 根据后端发送来的新加入玩家的信息，在其他玩家的前端创建出该玩家的函数
+    receive_create_player(uuid, username, photo) {
+        // 参考player/zbase.js
+        // constructor(playground, x, y, radius, color, speed, character, username, photo)
+        // 新建的玩家放在playground的中心，x, y坐标使用相对位置
+        let player = new Player(
+            this.playground,
+            this.playground.width / 2 / this.playground.scale, 
+            0.5,
+            0.05,
+            "white", // 颜色随便，后续会被图片覆盖掉
+            0.15,
+            "enemy", // 新建的玩家为敌人
+            username,
+            photo,
+        );
 
+        player.uuid = uuid; // 每个对象的uuid要等于创建它窗口的uuid
+        this.playground.players.push(player); // 将该player加入到playground中
     }
 }

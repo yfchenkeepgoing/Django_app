@@ -70,7 +70,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
         cache.set(self.room_name, players, 3600) # 有效期1小时
 
         # 将更新后的信息群发给组（group/room）内的所有人
-        await.self.channel_layer.group_send(
+        await self.channel_layer.group_send(
             self.room_name, # 第一个参数：group的名字，一个room即为一个group
             # 第二个参数：需要发送的信息
             {

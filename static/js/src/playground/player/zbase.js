@@ -5,6 +5,9 @@ class Player extends AcGameObject {
     //还需传入球的半径、颜色、玩家的移速（每秒移动占地图高度的百分比，适合联机时大家用不同分辨率的电脑）、是否是自己
     //自己的操作方式是键盘和鼠标，敌人的操作方式是通过网络传过来的，因此需要标签表示是否是自己
     constructor(playground, x, y, radius, color, speed, character, username, photo) { 
+        
+        console.log(character, username, photo); // 输出新创建的玩家的信息，理论上character应该为enemy
+
         super(); //调用基类的构造函数，将自身通过AC_GAME_OBJECTS.push(this)插入到AC_GAME_OBJECTS这个数组中
         //保存player的playground和横纵坐标
         this.playground = playground;
@@ -57,7 +60,7 @@ class Player extends AcGameObject {
     start() {
         if (this.character === "me") { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
             this.add_listening_events(); // 监听函数只能加给自己，不能加给敌人
-        } else { // 敌人用ai操纵
+        } else if (this.character === "robot") { // 敌人用ai操纵
             let tx = Math.random() * this.playground.width / this.playground.scale; // random会返回一个0-1之间的随机数
             let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上

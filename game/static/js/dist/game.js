@@ -286,6 +286,9 @@ class Player extends AcGameObject {
     //还需传入球的半径、颜色、玩家的移速（每秒移动占地图高度的百分比，适合联机时大家用不同分辨率的电脑）、是否是自己
     //自己的操作方式是键盘和鼠标，敌人的操作方式是通过网络传过来的，因此需要标签表示是否是自己
     constructor(playground, x, y, radius, color, speed, character, username, photo) { 
+        
+        console.log(character, username, photo); // 输出新创建的玩家的信息，理论上character应该为enemy
+
         super(); //调用基类的构造函数，将自身通过AC_GAME_OBJECTS.push(this)插入到AC_GAME_OBJECTS这个数组中
         //保存player的playground和横纵坐标
         this.playground = playground;
@@ -338,7 +341,7 @@ class Player extends AcGameObject {
     start() {
         if (this.character === "me") { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
             this.add_listening_events(); // 监听函数只能加给自己，不能加给敌人
-        } else { // 敌人用ai操纵
+        } else if (this.character === "robot") { // 敌人用ai操纵
             let tx = Math.random() * this.playground.width / this.playground.scale; // random会返回一个0-1之间的随机数
             let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty) // 将敌人移动到随机生成的目的地上
@@ -648,27 +651,68 @@ class Fireball extends AcGameObject {
     }
 
     start() {
+        this.receive();
+    }
 
+    // 接收后端发送到前端的当前玩家的信息的函数
+    receive() {
+        let outer = this; 
+
+        // 在前端接收wss协议的信息的api：onmessage
+        this.ws.onmessage = function(e) {
+            // 解析后端向前端传输的信息, 此处是将字符串变成字典（后端的index.py中是将字典变为字符串）
+            let data = JSON.parse(e.data);
+            // console.log(data); // 输出data，用于调试
+
+            // 当前玩家本人并不需要接收到后端发送来的自己的消息，将这个消息pass掉即可
+            let uuid = data.uuid;
+            if (uuid === outer.uuid) return false;
+
+            // 对后端发来的信息的event类型也进行判断，判断是否是create_player
+            let event = data.event;
+            if (event === "create_player") {
+                outer.receive_create_player(uuid, data.username, data.photo); // 调用本地处理create_player的函数
+            }
+        };
     }
 
     // 前端向后端发送create player的函数，前端作为发送者
-    send_create_player() {
+    // 本函数是创建当前玩家的函数
+    send_create_player(username, photo) {
         let outer = this;
 
         // 将json封装为字符串，api是JSON.stringify
         this.ws.send(JSON.stringify({
             // 'message': "hello acapp server", // 调试用
             // 当前向服务器传递的信息
-            'event': "create player",
+            'event': "create_player",
             // 此uuid是由playground/zbase.js中的this.mps.uuid = this.players[0].uuid赋值的
             // 因为mps就是class MultiPlayerSocket的对象
             'uuid': outer.uuid, 
+            'username': username,
+            'photo': photo,
         }));
     }
 
-    // 后端向另一个前端发送create player的函数，另一个前端作为接收者
-    receive_create_player() {
+    // 根据后端发送来的新加入玩家的信息，在其他玩家的前端创建出该玩家的函数
+    receive_create_player(uuid, username, photo) {
+        // 参考player/zbase.js
+        // constructor(playground, x, y, radius, color, speed, character, username, photo)
+        // 新建的玩家放在playground的中心，x, y坐标使用相对位置
+        let player = new Player(
+            this.playground,
+            this.playground.width / 2 / this.playground.scale, 
+            0.5,
+            0.05,
+            "white", // 颜色随便，后续会被图片覆盖掉
+            0.15,
+            "enemy", // 新建的玩家为敌人
+            username,
+            photo,
+        );
 
+        player.uuid = uuid; // 每个对象的uuid要等于创建它窗口的uuid
+        this.playground.players.push(player); // 将该player加入到playground中
     }
 }class AcGamePlayground {
     constructor(root) {
@@ -772,8 +816,9 @@ class Fireball extends AcGameObject {
 
             // 尝试前端向后端发送一个消息，要等待链接创建成功再发送
             // onopen函数：链接创建成功时会回调本函数
+            // send_create_player函数：创建当前玩家
             this.mps.ws.onopen = function() {
-                outer.mps.send_create_player();
+                outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
             };
         }
     }
