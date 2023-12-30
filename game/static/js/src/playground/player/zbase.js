@@ -86,9 +86,17 @@ class Player extends AcGameObject {
                 // 可以看看鼠标点击有没有出发move_to函数，不要用this，用outer
                 // 若在此处用this, 则这个this指的是mousedown函数本身，外面的this才是指整个class
                 // 将鼠标点击的位置e.clientX, e.clientY传给move_to函数的参数tx, ty
-                outer.move_to((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale); // 鼠标坐标的api: e.clientX和e.clientY
+                let tx = (e.clientX - rect.left) / outer.playground.scale;
+                let ty = (e.clientY - rect.top) / outer.playground.scale;
+                outer.move_to(tx, ty); // 鼠标坐标的api: e.clientX和e.clientY
                 // 注意，e.clientX是整个屏幕的坐标，但player的x坐标是画布中的相对坐标
                 // 需要将大坐标系中的绝对坐标映射为小坐标系中的相对坐标
+
+                // 判断模式：多人模式则需要群发move_to函数
+                if (outer.playground.mode === "multi mode") {
+                    outer.playground.mps.send_move_to(tx, ty);
+                }
+
             } else if (e.which === 1) { // 若点击的是鼠标左键
                 if (outer.cur_skill === "fireball") { // 若当前技能是fireball，则应该释放一个火球
                     outer.shoot_fireball((e.clientX- rect.left) / outer.playground.scale, (e.clientY- rect.top) / outer.playground.scale); // 鼠标点击的坐标是e.clientX和e.clientY

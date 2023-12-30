@@ -367,9 +367,17 @@ class Player extends AcGameObject {
                 // 可以看看鼠标点击有没有出发move_to函数，不要用this，用outer
                 // 若在此处用this, 则这个this指的是mousedown函数本身，外面的this才是指整个class
                 // 将鼠标点击的位置e.clientX, e.clientY传给move_to函数的参数tx, ty
-                outer.move_to((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale); // 鼠标坐标的api: e.clientX和e.clientY
+                let tx = (e.clientX - rect.left) / outer.playground.scale;
+                let ty = (e.clientY - rect.top) / outer.playground.scale;
+                outer.move_to(tx, ty); // 鼠标坐标的api: e.clientX和e.clientY
                 // 注意，e.clientX是整个屏幕的坐标，但player的x坐标是画布中的相对坐标
                 // 需要将大坐标系中的绝对坐标映射为小坐标系中的相对坐标
+
+                // 判断模式：多人模式则需要群发move_to函数
+                if (outer.playground.mode === "multi mode") {
+                    outer.playground.mps.send_move_to(tx, ty);
+                }
+
             } else if (e.which === 1) { // 若点击的是鼠标左键
                 if (outer.cur_skill === "fireball") { // 若当前技能是fireball，则应该释放一个火球
                     outer.shoot_fireball((e.clientX- rect.left) / outer.playground.scale, (e.clientY- rect.top) / outer.playground.scale); // 鼠标点击的坐标是e.clientX和e.clientY
@@ -672,6 +680,8 @@ class Fireball extends AcGameObject {
             let event = data.event;
             if (event === "create_player") {
                 outer.receive_create_player(uuid, data.username, data.photo); // 调用本地处理create_player的函数
+            } else if (event === "move_to") {
+                outer.receive_move_to(uuid, data.tx, data.ty);
             }
         };
     }
@@ -694,6 +704,21 @@ class Fireball extends AcGameObject {
         }));
     }
 
+    // 实现get_player函数：通过uuid找到对应的player
+    // 暴力遍历所有的player即可
+    get_player(uuid) {
+        let players = this.playground.players;
+        for (let i = 0; i < players.length; i ++ ) {
+            let player = players[i];
+            if (player.uuid === uuid) {
+                return player;
+            }
+        }
+
+        // 找不到玩家则返回空
+        return null;
+    }
+
     // 根据后端发送来的新加入玩家的信息，在其他玩家的前端创建出该玩家的函数
     receive_create_player(uuid, username, photo) {
         // 参考player/zbase.js
@@ -713,6 +738,34 @@ class Fireball extends AcGameObject {
 
         player.uuid = uuid; // 每个对象的uuid要等于创建它窗口的uuid
         this.playground.players.push(player); // 将该player加入到playground中
+    }
+
+    // 同步move_to函数
+    // 将move_to函数从前端发送给服务器端，仿照send_create_player
+    send_move_to(tx, ty) {
+        let outer = this;
+
+        // 将json封装为字符串，api是JSON.stringify
+        this.ws.send(JSON.stringify({
+            'event': "move_to",
+            // 此uuid是由playground/zbase.js中的this.mps.uuid = this.players[0].uuid赋值的
+            // 因为mps就是class MultiPlayerSocket的对象
+            'uuid': outer.uuid, // 本uuid来自发出move_to指令的人
+            'tx': tx, // 目的地的横坐标
+            'ty': ty, // 目的地的纵坐标
+        }));
+    }
+
+    // 从服务器端接收其他窗口的move_to函数信息的函数，仿照receive_create_player
+    // 参数uuid来自move_to函数的发出者
+    receive_move_to(uuid, tx, ty) {
+        // 通过uuid找到命令的发出者
+        let player = this.get_player(uuid); // move_to函数的uuid来自其发出者的uuid，这在send_move_to函数中有体现
+
+        // 玩家存在，再去调用其move_to函数，防止玩家下线还调用了move_to函数
+        if (player) {
+            player.move_to(tx, ty); // move_to函数的发出者在本窗口中同步移动
+        }
     }
 }class AcGamePlayground {
     constructor(root) {
@@ -790,7 +843,10 @@ class Fireball extends AcGameObject {
         this.width = this.$playground.width(); //记下界面的宽度
         this.height = this.$playground.height(); //记下界面的高度
         // 生成一个GameMap类的对象game_map，用于放置画布canvas，传入的参数是AcGamePlayground本身
-        this.game_map = new GameMap(this); 
+        this.game_map = new GameMap(this);
+        
+        // 记录下模式：单人/多人
+        this.mode = mode;
 
         this.resize(); // 将resize调整到产生game_map之后，这样resize也能作用到game_map
 

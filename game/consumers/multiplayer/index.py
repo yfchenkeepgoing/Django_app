@@ -74,8 +74,8 @@ class MultiPlayer(AsyncWebsocketConsumer):
             self.room_name, # 第一个参数：group的名字，一个room即为一个group
             # 第二个参数：需要发送的信息
             {
-                # type关键字非常重要，相当于把以下信息发送给名为group_create_player的函数
-                'type': "group_create_player", 
+                # type关键字非常重要，相当于把以下信息发送给名为group_send_event的函数
+                'type': "group_send_event", 
                 'event': "create_player",
                 'uuid': data['uuid'],
                 'username': data['username'],
@@ -83,10 +83,28 @@ class MultiPlayer(AsyncWebsocketConsumer):
             }
         )
     
+    # 后端实现move_to函数，类似于上面的create_player函数
+    async def move_to(self, data):
+        # 群发信息即可，不需要操作redis
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "move_to",
+                'uuid': data['uuid'], # move_to函数的发出者的uuid
+                'tx': data['tx'],
+                'ty': data['ty'],
+            }
+        )
+    
     # 将更新后的信息群发后，需要一个函数来接收这些信息
     # 接收函数的名字就是type的关键字
     # 函数接收到信息后，直接将信息发送给前端
-    async def group_create_player(self, data):
+    # async def group_create_player(self, data):
+    #     await self.send(text_data=json.dumps(data))
+
+    # 由于所有需要广播的函数形态相同，所以把所有事件的群发函数写成一个即可
+    async def group_send_event(self, data):
         await self.send(text_data=json.dumps(data))
 
     # 第三个函数：receive
@@ -99,3 +117,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
         # 当接收到的事件类型是create_player，则调用create_player函数
         if event == "create_player":
             await self.create_player(data)
+        # 当接收到的事件类型是move_to，则调用move_to函数
+        elif event == "move_to":
+            await self.move_to(data)

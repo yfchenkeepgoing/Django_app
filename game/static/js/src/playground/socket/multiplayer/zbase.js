@@ -32,6 +32,8 @@ class MultiPlayerSocket {
             let event = data.event;
             if (event === "create_player") {
                 outer.receive_create_player(uuid, data.username, data.photo); // 调用本地处理create_player的函数
+            } else if (event === "move_to") {
+                outer.receive_move_to(uuid, data.tx, data.ty);
             }
         };
     }
@@ -54,6 +56,21 @@ class MultiPlayerSocket {
         }));
     }
 
+    // 实现get_player函数：通过uuid找到对应的player
+    // 暴力遍历所有的player即可
+    get_player(uuid) {
+        let players = this.playground.players;
+        for (let i = 0; i < players.length; i ++ ) {
+            let player = players[i];
+            if (player.uuid === uuid) {
+                return player;
+            }
+        }
+
+        // 找不到玩家则返回空
+        return null;
+    }
+
     // 根据后端发送来的新加入玩家的信息，在其他玩家的前端创建出该玩家的函数
     receive_create_player(uuid, username, photo) {
         // 参考player/zbase.js
@@ -73,5 +90,33 @@ class MultiPlayerSocket {
 
         player.uuid = uuid; // 每个对象的uuid要等于创建它窗口的uuid
         this.playground.players.push(player); // 将该player加入到playground中
+    }
+
+    // 同步move_to函数
+    // 将move_to函数从前端发送给服务器端，仿照send_create_player
+    send_move_to(tx, ty) {
+        let outer = this;
+
+        // 将json封装为字符串，api是JSON.stringify
+        this.ws.send(JSON.stringify({
+            'event': "move_to",
+            // 此uuid是由playground/zbase.js中的this.mps.uuid = this.players[0].uuid赋值的
+            // 因为mps就是class MultiPlayerSocket的对象
+            'uuid': outer.uuid, // 本uuid来自发出move_to指令的人
+            'tx': tx, // 目的地的横坐标
+            'ty': ty, // 目的地的纵坐标
+        }));
+    }
+
+    // 从服务器端接收其他窗口的move_to函数信息的函数，仿照receive_create_player
+    // 参数uuid来自move_to函数的发出者
+    receive_move_to(uuid, tx, ty) {
+        // 通过uuid找到命令的发出者
+        let player = this.get_player(uuid); // move_to函数的uuid来自其发出者的uuid，这在send_move_to函数中有体现
+
+        // 玩家存在，再去调用其move_to函数，防止玩家下线还调用了move_to函数
+        if (player) {
+            player.move_to(tx, ty); // move_to函数的发出者在本窗口中同步移动
+        }
     }
 }

@@ -74,7 +74,10 @@ class AcGamePlayground {
         this.width = this.$playground.width(); //记下界面的宽度
         this.height = this.$playground.height(); //记下界面的高度
         // 生成一个GameMap类的对象game_map，用于放置画布canvas，传入的参数是AcGamePlayground本身
-        this.game_map = new GameMap(this); 
+        this.game_map = new GameMap(this);
+        
+        // 记录下模式：单人/多人
+        this.mode = mode;
 
         this.resize(); // 将resize调整到产生game_map之后，这样resize也能作用到game_map
 
