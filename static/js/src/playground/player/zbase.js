@@ -45,6 +45,9 @@ class Player extends AcGameObject {
         // 倒计时
         this.spent_time = 0;
 
+        // 由于fireball会消失，我们需要先将每个玩家发射的fireball都存下来
+        this.fireballs = [];
+
         // 判断当前选择了什么技能
         this.cur_skill = null; // 当前并未选择技能
 
@@ -98,8 +101,16 @@ class Player extends AcGameObject {
                 }
 
             } else if (e.which === 1) { // 若点击的是鼠标左键
+                // 因为接下来要实现一个闪现技能，也需要求tx, ty，因此把tx, ty放在if判断外面
+                let tx = (e.clientX- rect.left) / outer.playground.scale;
+                let ty = (e.clientY- rect.top) / outer.playground.scale;
                 if (outer.cur_skill === "fireball") { // 若当前技能是fireball，则应该释放一个火球
-                    outer.shoot_fireball((e.clientX- rect.left) / outer.playground.scale, (e.clientY- rect.top) / outer.playground.scale); // 鼠标点击的坐标是e.clientX和e.clientY
+                    let fireball = outer.shoot_fireball(tx, ty); // 鼠标点击的坐标是e.clientX和e.clientY
+
+                    // 多人模式，则广播shoot_fireball函数
+                    if (outer.playground.mode === "multi mode") { 
+                        outer.playground.mps.send_shoot_fireball(tx, ty, fireball.uuid); // send_shoot_fireball函数定义在multiplayer/zbase.js中
+                    }
                 }
                 outer.cur_skill = null; // 当前技能被释放掉
             }
@@ -131,7 +142,21 @@ class Player extends AcGameObject {
 
         // 创建火球，传入上述参数, 新加入火球的伤害值参数，每个玩家的半径是总高度的0.05，因此伤害值可以定义为总高度的0.01
         // 相当于每次可以打掉玩家20%的血量
-        new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
+        let fireball = new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
+        this.fireballs.push(fireball); // 将发射的fireball存入fireballs数组中
+
+        return fireball; // 为了获取fireball的uuid，因此需要返回fireball
+    }
+
+    // 通过uuid来删除火球
+    destroy_fireball(uuid) {
+        for (let i = 0; i < this.fireballs.length; i ++ ) {
+            let fireball = this.fireballs[i];
+            if (fireball.uuid === uuid) { // 通过uuid找到了这个火球，则删除之
+                fireball.destroy();
+                break; // 删完后退出循环，可以提高程序运行效率
+            }
+        }
     }
 
     // 求(x, y)和(tx, ty)间的欧几里得距离
@@ -276,6 +301,7 @@ class Player extends AcGameObject {
         for (let i = 0; i < this.playground.players.length; i ++ ) {
             if (this.playground.players[i] == this) {
                 this.playground.players.splice(i, 1);
+                break; // 删完后退出循环，可以提高程序运行效率
             }
         }
     }

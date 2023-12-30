@@ -326,6 +326,9 @@ class Player extends AcGameObject {
         // 倒计时
         this.spent_time = 0;
 
+        // 由于fireball会消失，我们需要先将每个玩家发射的fireball都存下来
+        this.fireballs = [];
+
         // 判断当前选择了什么技能
         this.cur_skill = null; // 当前并未选择技能
 
@@ -379,8 +382,16 @@ class Player extends AcGameObject {
                 }
 
             } else if (e.which === 1) { // 若点击的是鼠标左键
+                // 因为接下来要实现一个闪现技能，也需要求tx, ty，因此把tx, ty放在if判断外面
+                let tx = (e.clientX- rect.left) / outer.playground.scale;
+                let ty = (e.clientY- rect.top) / outer.playground.scale;
                 if (outer.cur_skill === "fireball") { // 若当前技能是fireball，则应该释放一个火球
-                    outer.shoot_fireball((e.clientX- rect.left) / outer.playground.scale, (e.clientY- rect.top) / outer.playground.scale); // 鼠标点击的坐标是e.clientX和e.clientY
+                    let fireball = outer.shoot_fireball(tx, ty); // 鼠标点击的坐标是e.clientX和e.clientY
+
+                    // 多人模式，则广播shoot_fireball函数
+                    if (outer.playground.mode === "multi mode") { 
+                        outer.playground.mps.send_shoot_fireball(tx, ty, fireball.uuid); // send_shoot_fireball函数定义在multiplayer/zbase.js中
+                    }
                 }
                 outer.cur_skill = null; // 当前技能被释放掉
             }
@@ -412,7 +423,21 @@ class Player extends AcGameObject {
 
         // 创建火球，传入上述参数, 新加入火球的伤害值参数，每个玩家的半径是总高度的0.05，因此伤害值可以定义为总高度的0.01
         // 相当于每次可以打掉玩家20%的血量
-        new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
+        let fireball = new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
+        this.fireballs.push(fireball); // 将发射的fireball存入fireballs数组中
+
+        return fireball; // 为了获取fireball的uuid，因此需要返回fireball
+    }
+
+    // 通过uuid来删除火球
+    destroy_fireball(uuid) {
+        for (let i = 0; i < this.fireballs.length; i ++ ) {
+            let fireball = this.fireballs[i];
+            if (fireball.uuid === uuid) { // 通过uuid找到了这个火球，则删除之
+                fireball.destroy();
+                break; // 删完后退出循环，可以提高程序运行效率
+            }
+        }
     }
 
     // 求(x, y)和(tx, ty)间的欧几里得距离
@@ -557,6 +582,7 @@ class Player extends AcGameObject {
         for (let i = 0; i < this.playground.players.length; i ++ ) {
             if (this.playground.players[i] == this) {
                 this.playground.players.splice(i, 1);
+                break; // 删完后退出循环，可以提高程序运行效率
             }
         }
     }
@@ -592,12 +618,24 @@ class Fireball extends AcGameObject {
             return false; // 停止函数的进一步执行，还阻止了事件的默认行为，并停止事件冒泡到父元素
         }
 
+        // 调用update_move和update_attack
+        this.update_move();
+        this.update_attack();
+
+        this.render(); 
+    }
+
+    // 拆分自原本的update函数：move部分
+    update_move() {
         // 移动火球
         let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000); // 同player
         this.x += this.vx * moved; // 方向乘上距离（dcosθ）
         this.y += this.vy * moved; // dsinθ
         this.move_length -= moved; // 更新移动后的需要移动的距离
+    }
 
+    // 拆分自原本的update函数：attack部分
+    update_attack() {
         // 判断炮弹是否击中敌人, playground中记录了所有的players，用于判断碰撞
         for (let i = 0; i < this.playground.players.length; i ++ ) {
             let player = this.playground.players[i];
@@ -605,10 +643,9 @@ class Fireball extends AcGameObject {
             // 如果当前枚举到的player并非发出炮弹者，且炮弹击中了当前枚举到的玩家
             if (this.player !== player && this.is_collision(player)) { 
                 this.attack(player);
+                break; // 一个fireball只攻击一名player
             }
         }
-        
-        this.render(); 
     }
 
     // 重复实现求两点间距离的函数，用于求两个圆心间的距离
@@ -646,6 +683,17 @@ class Fireball extends AcGameObject {
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
     }
+
+    // 由于在player中存储了fireball列表，因此在删除某个fireball前需要将其从player.fireballs中删去
+    on_destroy() {
+        let fireballs = this.player.fireballs;
+        for (let i = 0; i < fireballs.length; i ++ ) {
+            if (fireballs[i] === this) {
+                fireballs.splice(i, 1); // 从fireballs数组中删去当前的fireball
+                break;
+            }
+        }
+    }
 }class MultiPlayerSocket {
     // 构造函数，传入参数playground，方便与地图中的其他元素产生关联
     constructor(playground) {
@@ -682,6 +730,8 @@ class Fireball extends AcGameObject {
                 outer.receive_create_player(uuid, data.username, data.photo); // 调用本地处理create_player的函数
             } else if (event === "move_to") {
                 outer.receive_move_to(uuid, data.tx, data.ty);
+            } else if (event === "shoot_fireball") {
+                outer.receive_shoot_fireball(uuid, data.tx, data.ty, data.ball_uuid);
             }
         };
     }
@@ -765,6 +815,34 @@ class Fireball extends AcGameObject {
         // 玩家存在，再去调用其move_to函数，防止玩家下线还调用了move_to函数
         if (player) {
             player.move_to(tx, ty); // move_to函数的发出者在本窗口中同步移动
+        }
+    }
+
+    // 同步shoot fireball
+    // 将shoot fireball函数从前端发送给服务器端，仿照send_create_player
+    send_shoot_fireball(tx, ty, ball_uuid) { // tx, ty：子弹发射的目标地点, 接下来是子弹的uuid（因为需要在所有窗口中将子弹同步）
+        let outer = this;
+
+        this.ws.send(JSON.stringify({
+            'event': "shoot_fireball",
+            'uuid': outer.uuid, // 发射者的uuid
+            'tx': tx, // 目的地的横坐标
+            'ty': ty, // 目的地的纵坐标
+            'ball_uuid': ball_uuid, // 子弹的uuid
+        }));
+    }
+
+    // 从服务器端接收其他窗口的shoot fireball函数信息的函数，仿照receive_create_player
+    // uuid: 发射者的uuid, ball_uuid: 子弹的uuid
+    receive_shoot_fireball(uuid, tx, ty, ball_uuid) {
+        // 通过uuid找到发射者的uuid
+        let player = this.get_player(uuid); 
+
+        // 玩家存在，再去调用其shoot_fireball函数，防止玩家已经阵亡
+        // 同时存储该名玩家创建的fireball
+        if (player) {
+            let fireball = player.shoot_fireball(tx, ty);
+            fireball.uuid = ball_uuid; // 所有窗口的火球的uuid需要统一
         }
     }
 }class AcGamePlayground {

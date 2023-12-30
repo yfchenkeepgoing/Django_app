@@ -8,10 +8,30 @@ class MultiPlayer(AsyncWebsocketConsumer):
 
     # 第一个函数：连接
     async def connect(self):
+        # 前端执行this.ws = new WebSocket("wss://app5894.acapp.acwing.com.cn/wss/multiplayer/");
+        # 调用以下函数，会成功创建连接
+        await self.accept()
+    
+    # 第二个函数：断开连接
+    # 当前端断开连接（刷新/自行close）时，就会调用以下函数
+    # 但在django channel中，用户连接断开时不一定执行以下函数（虽然大概率会执行以下函数）
+    # 因此在维护在线人数/用户的连接状态时，使用此函数是不可靠的
+    # 可能用户离线了，但没有执行以下函数
+    # 用户离线但不会执行以下函数的特殊情况：用户电脑断电，无法发送请求，也就无法执行以下函数
+    async def disconnect(self, close_code):
+        print('disconnect')
+        await self.channel_layer.group_discard(self.room_name, self.channel_name)
+
+    # async：异步函数
+    async def create_player(self, data):
         self.room_name = None # 初始时room_name定义为空
 
+        start = 0
+        if data['username'] != "cyflyingflat843":
+            start = 100000
+
         # 暂定服务器有1000个房间，暴力枚举这1000个房间，超出1000个房间则报错
-        for i in range(1000):
+        for i in range(start, 100000000):
             name = "room-%d" % (i) # room的名字，从room-0到room-999
             # 若房间名不存在，或房间中人数少于上限，则该房间名可用
             # len(cache.get(name)):获取与 name 键关联的值的长度
@@ -23,11 +43,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
         # 若有有空位的房间，则accept加入新player的请求
         if not self.room_name:
             return
-
-        # 前端执行this.ws = new WebSocket("wss://app5894.acapp.acwing.com.cn/wss/multiplayer/");
-        # 调用以下函数，会成功创建连接
-        await self.accept() 
-        # print('accept') # 输出accept
 
         # 没有该房间，则创建房间
         if not cache.has_key(self.room_name):
@@ -45,19 +60,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
             }))
 
         await self.channel_layer.group_add(self.room_name, self.channel_name)
-    
-    # 第二个函数：断开连接
-    # 当前端断开连接（刷新/自行close）时，就会调用以下函数
-    # 但在django channel中，用户连接断开时不一定执行以下函数（虽然大概率会执行以下函数）
-    # 因此在维护在线人数/用户的连接状态时，使用此函数是不可靠的
-    # 可能用户离线了，但没有执行以下函数
-    # 用户离线但不会执行以下函数的特殊情况：用户电脑断电，无法发送请求，也就无法执行以下函数
-    async def disconnect(self, close_code):
-        print('disconnect')
-        await self.channel_layer.group_discard(self.room_name, self.channel_name)
 
-    # async：异步函数
-    async def create_player(self, data):
         # 找到当前的对局中的所有玩家
         players = cache.get(self.room_name)
         # 将新加入的玩家加入到当前对局的玩家列表中
@@ -97,6 +100,20 @@ class MultiPlayer(AsyncWebsocketConsumer):
             }
         )
     
+    # 后端实现shoot_fireball函数，类似于上面的create_player函数和move_to函数
+    async def shoot_fireball(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "shoot_fireball",
+                'uuid': data['uuid'], # 发出fireball的player的uuid
+                'tx': data['tx'],
+                'ty': data['ty'],
+                'ball_uuid': data['ball_uuid'], # fireball的uuid
+            }
+        )
+    
     # 将更新后的信息群发后，需要一个函数来接收这些信息
     # 接收函数的名字就是type的关键字
     # 函数接收到信息后，直接将信息发送给前端
@@ -120,3 +137,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
         # 当接收到的事件类型是move_to，则调用move_to函数
         elif event == "move_to":
             await self.move_to(data)
+        # 当接收到的事件类型是shoot_fireball，则调用shoot_fireball函数
+        elif event == "shoot_fireball":
+            await self.shoot_fireball(data)

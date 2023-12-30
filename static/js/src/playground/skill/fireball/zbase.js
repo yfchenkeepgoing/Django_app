@@ -29,12 +29,24 @@ class Fireball extends AcGameObject {
             return false; // 停止函数的进一步执行，还阻止了事件的默认行为，并停止事件冒泡到父元素
         }
 
+        // 调用update_move和update_attack
+        this.update_move();
+        this.update_attack();
+
+        this.render(); 
+    }
+
+    // 拆分自原本的update函数：move部分
+    update_move() {
         // 移动火球
         let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000); // 同player
         this.x += this.vx * moved; // 方向乘上距离（dcosθ）
         this.y += this.vy * moved; // dsinθ
         this.move_length -= moved; // 更新移动后的需要移动的距离
+    }
 
+    // 拆分自原本的update函数：attack部分
+    update_attack() {
         // 判断炮弹是否击中敌人, playground中记录了所有的players，用于判断碰撞
         for (let i = 0; i < this.playground.players.length; i ++ ) {
             let player = this.playground.players[i];
@@ -42,10 +54,9 @@ class Fireball extends AcGameObject {
             // 如果当前枚举到的player并非发出炮弹者，且炮弹击中了当前枚举到的玩家
             if (this.player !== player && this.is_collision(player)) { 
                 this.attack(player);
+                break; // 一个fireball只攻击一名player
             }
         }
-        
-        this.render(); 
     }
 
     // 重复实现求两点间距离的函数，用于求两个圆心间的距离
@@ -82,5 +93,16 @@ class Fireball extends AcGameObject {
         this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
+    }
+
+    // 由于在player中存储了fireball列表，因此在删除某个fireball前需要将其从player.fireballs中删去
+    on_destroy() {
+        let fireballs = this.player.fireballs;
+        for (let i = 0; i < fireballs.length; i ++ ) {
+            if (fireballs[i] === this) {
+                fireballs.splice(i, 1); // 从fireballs数组中删去当前的fireball
+                break;
+            }
+        }
     }
 }

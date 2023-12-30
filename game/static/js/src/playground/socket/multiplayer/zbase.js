@@ -34,6 +34,8 @@ class MultiPlayerSocket {
                 outer.receive_create_player(uuid, data.username, data.photo); // 调用本地处理create_player的函数
             } else if (event === "move_to") {
                 outer.receive_move_to(uuid, data.tx, data.ty);
+            } else if (event === "shoot_fireball") {
+                outer.receive_shoot_fireball(uuid, data.tx, data.ty, data.ball_uuid);
             }
         };
     }
@@ -117,6 +119,34 @@ class MultiPlayerSocket {
         // 玩家存在，再去调用其move_to函数，防止玩家下线还调用了move_to函数
         if (player) {
             player.move_to(tx, ty); // move_to函数的发出者在本窗口中同步移动
+        }
+    }
+
+    // 同步shoot fireball
+    // 将shoot fireball函数从前端发送给服务器端，仿照send_create_player
+    send_shoot_fireball(tx, ty, ball_uuid) { // tx, ty：子弹发射的目标地点, 接下来是子弹的uuid（因为需要在所有窗口中将子弹同步）
+        let outer = this;
+
+        this.ws.send(JSON.stringify({
+            'event': "shoot_fireball",
+            'uuid': outer.uuid, // 发射者的uuid
+            'tx': tx, // 目的地的横坐标
+            'ty': ty, // 目的地的纵坐标
+            'ball_uuid': ball_uuid, // 子弹的uuid
+        }));
+    }
+
+    // 从服务器端接收其他窗口的shoot fireball函数信息的函数，仿照receive_create_player
+    // uuid: 发射者的uuid, ball_uuid: 子弹的uuid
+    receive_shoot_fireball(uuid, tx, ty, ball_uuid) {
+        // 通过uuid找到发射者的uuid
+        let player = this.get_player(uuid); 
+
+        // 玩家存在，再去调用其shoot_fireball函数，防止玩家已经阵亡
+        // 同时存储该名玩家创建的fireball
+        if (player) {
+            let fireball = player.shoot_fireball(tx, ty);
+            fireball.uuid = ball_uuid; // 所有窗口的火球的uuid需要统一
         }
     }
 }
