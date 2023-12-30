@@ -6,7 +6,7 @@ class Player extends AcGameObject {
     //自己的操作方式是键盘和鼠标，敌人的操作方式是通过网络传过来的，因此需要标签表示是否是自己
     constructor(playground, x, y, radius, color, speed, character, username, photo) { 
         
-        console.log(character, username, photo); // 输出新创建的玩家的信息，理论上character应该为enemy
+        // console.log(character, username, photo); // 输出新创建的玩家的信息，理论上character应该为enemy
 
         super(); //调用基类的构造函数，将自身通过AC_GAME_OBJECTS.push(this)插入到AC_GAME_OBJECTS这个数组中
         //保存player的playground和横纵坐标

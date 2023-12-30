@@ -287,7 +287,7 @@ class Player extends AcGameObject {
     //自己的操作方式是键盘和鼠标，敌人的操作方式是通过网络传过来的，因此需要标签表示是否是自己
     constructor(playground, x, y, radius, color, speed, character, username, photo) { 
         
-        console.log(character, username, photo); // 输出新创建的玩家的信息，理论上character应该为enemy
+        // console.log(character, username, photo); // 输出新创建的玩家的信息，理论上character应该为enemy
 
         super(); //调用基类的构造函数，将自身通过AC_GAME_OBJECTS.push(this)插入到AC_GAME_OBJECTS这个数组中
         //保存player的playground和横纵坐标
@@ -1080,7 +1080,7 @@ class Settings {
             type: "GET",
             // 无需传数据，因此只需要成功函数
             success: function(resp) {
-                console.log(resp);
+                // console.log(resp);
                 // 成功，则将当前页面重定向
                 // resp.result和resp.apply_code_url和apply_code.py中的写法保持一致
                 if (resp.result === "success") {
@@ -1093,13 +1093,13 @@ class Settings {
 
     // github一键登录的前端和后端交互的函数
     github_login() {
-        console.log("click github login") // 用于调试
+        // console.log("click github login") // 用于调试
         $.ajax({
             url: "https://app5894.acapp.acwing.com.cn/settings/acwing/web/apply_code_github/",
             type: "GET",
             // 无需传数据，因此只需要成功函数
             success: function(resp) {
-                console.log(resp);
+                // console.log(resp);
                 // 成功，则将当前页面重定向
                 // resp.result和resp.apply_code_url和apply_code.py中的写法保持一致
                 if (resp.result === "success") {
@@ -1128,7 +1128,7 @@ class Settings {
                 password: password,
             },
             success: function(resp) { // 返回值为后端传回来的一个字典，将其传入参数resp中
-                console.log(resp) // 输出resp，看对不对
+                // console.log(resp) // 输出resp，看对不对
                 // 三等号用于比较
                 // 若登录成功，则刷新，在cookie中会记录已经登录成功，刷新页面后进入菜单界面
                 if (resp.result === "success") {
@@ -1160,7 +1160,7 @@ class Settings {
 
             // 回调函数，后端返回的字典被传入resp种
             success: function(resp) {
-                console.log(resp); // 输出结果，便于调试
+                // console.log(resp); // 输出结果，便于调试
                 // 判断是否成功
                 if (resp.result === "success") {
                     // 刷新页面，注册成功后刷新页面就进入登录状态，打开菜单，因为register.py中有login
@@ -1176,21 +1176,24 @@ class Settings {
     // 在远程服务器上登出的函数
     logout_on_remote() {
         // 若前端是acapp，则不需要退出，acapp中关掉游戏界面就算是退出
-        if (this.platform === "ACAPP") return false; 
-
-        // 若前端是web，则有如下的登出操作
-        $.ajax({
-            url: "https://app5894.acapp.acwing.com.cn/settings/logout/",
-            type: "GET",
-            // 退出不需要参数，因此不需要data
-            success: function(resp) {
-                console.log(resp); // 输出后端返回的结果，用于调试
-                // 后端返回的resp的result必定为success
-                if (resp.result === "success") {
-                    location.reload(); // 刷新页面
+        // 调用api实现菜单界面的退出功能
+        if (this.platform === "ACAPP") {
+            this.root.AcWingOS.api.window.close(); // yxc提供的关闭窗口的api
+        } else {
+            // 若前端是web，则有如下的登出操作
+            $.ajax({
+                url: "https://app5894.acapp.acwing.com.cn/settings/logout/",
+                type: "GET",
+                // 退出不需要参数，因此不需要data
+                success: function(resp) {
+                    // console.log(resp); // 输出后端返回的结果，用于调试
+                    // 后端返回的resp的result必定为success
+                    if (resp.result === "success") {
+                        location.reload(); // 刷新页面
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     // 打开注册界面
@@ -1219,8 +1222,8 @@ class Settings {
         // resp是redirect_uri的返回值，redirect_uri就是receive_code函数
         // 因此resp是receive_code函数的返回值。返回值为用户名和头像（有待实现）
         this.root.AcWingOS.api.oauth2.authorize(appid, redirect_uri, scope, state, function(resp) {
-            console.log("called from acapp_login function"); // 方便显示下面的输出的来源
-            console.log(resp); // 输出，看返回结果是否正确
+            // console.log("called from acapp_login function"); // 方便显示下面的输出的来源
+            // console.log(resp); // 输出，看返回结果是否正确
             if (resp.result === "success") {
                 // 成功获取用户名和头像，后面和web端的getinfo函数逻辑相同
                 outer.username = resp.username;
@@ -1281,7 +1284,7 @@ class Settings {
             // })
             // 返回值确切来说是一个字典(dict)，这个返回值会被传给参数resp，可以打印出来观察
             success: function(resp) {
-                console.log(resp); // 打印getinfo.py的返回值
+                // console.log(resp); // 打印getinfo.py的返回值
                 // 若返回值为success，则应该打开菜单界面，隐藏登录界面（当前界面）
                 // 因此，本文件中也需要实现隐藏函数和显示函数
                 if (resp.result == "success") {
@@ -1318,7 +1321,7 @@ export class AcGame {
     constructor(id, AcWingOS) {
         // 输出参数AcWingOS，观察其是什么，其本质是一个提供了很多api的对象
         // 通过这个参数可以判断我们是通过web去访问还是通过acapp去访问
-        console.log(AcWingOS) 
+        // console.log(AcWingOS) 
         this.id = id; //存下id，传入的id是web.html中div的id
         //创建总对象ac_game：需要利用jquery在web.html中根据id找出div，将这个div存入总对象ac_game中
         this.$ac_game = $('#' + id);
