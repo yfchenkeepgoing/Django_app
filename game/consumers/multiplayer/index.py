@@ -114,6 +114,24 @@ class MultiPlayer(AsyncWebsocketConsumer):
             }
         )
     
+    # 后端实现attack函数，类似于上面的create_player函数，move_to函数和shoot_fireball函数
+    async def attack(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            # 参数较多，参照multiplayer/zbase.js中的send_attack函数发送的参数
+            {
+                'type': "group_send_event",
+                'event': "attack",
+                'uuid': data['uuid'],
+                'attackee_uuid': data['attackee_uuid'],
+                'x': data['x'],
+                'y': data['y'],
+                'angle': data['angle'],
+                'damage': data['damage'],
+                'ball_uuid': data['ball_uuid'],
+            }
+        )
+    
     # 将更新后的信息群发后，需要一个函数来接收这些信息
     # 接收函数的名字就是type的关键字
     # 函数接收到信息后，直接将信息发送给前端
@@ -140,3 +158,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
         # 当接收到的事件类型是shoot_fireball，则调用shoot_fireball函数
         elif event == "shoot_fireball":
             await self.shoot_fireball(data)
+        # 当接收到的事件类型是attack，则调用attack函数
+        elif event == "attack":
+            await self.attack(data)

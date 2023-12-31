@@ -36,6 +36,9 @@ class MultiPlayerSocket {
                 outer.receive_move_to(uuid, data.tx, data.ty);
             } else if (event === "shoot_fireball") {
                 outer.receive_shoot_fireball(uuid, data.tx, data.ty, data.ball_uuid);
+            } else if (event === "attack") {
+                // data中的信息不包含uuid，因为uuid就是本player的uuid，不需要在data中传输
+                outer.receive_attack(uuid, data.attackee_uuid, data.x, data.y, data.angle, data.damage, data.ball_uuid);
             }
         };
     }
@@ -147,6 +150,41 @@ class MultiPlayerSocket {
         if (player) {
             let fireball = player.shoot_fireball(tx, ty);
             fireball.uuid = ball_uuid; // 所有窗口的火球的uuid需要统一
+        }
+    }
+
+    // 同步attack函数
+    // 模仿send_create_player & send_move_to & send_shoot_fireball
+    // 传输信息：攻击者击中被攻击者, 故需要传输attacker和attackee的uuid
+    // 所有同步过程都没有同步坐标，因此随着时间的推移，每名玩家的坐标可能发生变化，因为存在误差（来自三角函数的计算和浮点数的计算）和网络延迟
+    // 击中其他player时，需要算角度，这个角度的误差可能越来越大
+    // 做补偿：attacker击中attackee时，在所有窗口中将attackee的位置同步
+    // 即我击中了你，你在所有窗口中的位置由我说了算
+    // 因此传入的参数还有attackee在attacker窗口中的位置，角度，以及伤害值
+    // 还需同步fireball，因为该炮弹已经击中了别人，在其他窗口中需要删掉（否则其他窗口中的该fireball就是一段动画，不会消失）
+    send_attack(attackee_uuid, x, y, angle, damage, ball_uuid) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "attack",
+            'uuid': outer.uuid, // attacker的uuid
+            'attackee_uuid': attackee_uuid, // attackee的uuid
+            'x': x,
+            'y': y,
+            'angle': angle,
+            'damage': damage,
+            'ball_uuid': ball_uuid,
+        }));
+    }
+
+    // 模仿receive_create_player & receive_move_to & receive_shoot_fireball
+    receive_attack(uuid, attackee_uuid, x, y, angle, damage, ball_uuid) {
+        let attacker = this.get_player(uuid); // 通过uuid找到攻击者
+        let attackee = this.get_player(attackee_uuid); // 通过uuid找到被攻击者
+
+        // 若攻击者和被攻击者都还活着，就处理攻击
+        if (attacker && attackee) {
+            // 调用player/zbase.js中实现的接受并处理自己被攻击的信息的函数
+            attackee.receive_attack(x, y, angle, damage, ball_uuid, attacker);
         }
     }
 }

@@ -214,6 +214,16 @@ class Player extends AcGameObject {
         this.speed *= 0.8;
     }
 
+    // 接受并处理自己被攻击的信息的函数
+    // 信息包括击中的坐标、角度，伤害，fireball的uuid和攻击者
+    receive_attack(x, y, angle, damage, ball_uuid, attacker) {
+        attacker.destroy_fireball(ball_uuid); // 从attacker的fireball列表中删掉击中别人的炮弹
+        // 同步被击中者（即自己）的坐标
+        this.x = x;
+        this.y = y;
+        this.is_attacked(angle, damage); // 调用is_attacked函数
+    }
+
     update() {
         this.update_move();
         this.render();

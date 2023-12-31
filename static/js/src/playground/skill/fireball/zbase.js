@@ -31,8 +31,13 @@ class Fireball extends AcGameObject {
 
         // 调用update_move和update_attack
         this.update_move();
-        this.update_attack();
 
+        // 炮弹的发射者是本窗口中的本玩家（me），才进行碰撞判断
+        // 若炮弹的发射者是本窗口中的敌人（enemy），则不进行碰撞判断
+        if (this.player.character !== "enemy") { // 多人模式下无robot角色
+            this.update_attack();
+        }
+    
         this.render(); 
     }
 
@@ -83,6 +88,12 @@ class Fireball extends AcGameObject {
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
         // 玩家被攻击到, 需要传入一个火球击中player的角度，同时传入一个伤害值
         player.is_attacked(angle, this.damage); 
+
+        // 多人模式下才需要去广播攻击函数
+        if (this.playground.mode === "multi mode") {
+            // send_attack(attackee_uuid, x, y, angle, damage, ball_uuid)
+            this.playground.mps.send_attack(player.uuid, player.x, player.y, angle, this.damage, this.uuid);
+        }
         this.destroy(); // 火球击中目标后，应该消失
     }
 
