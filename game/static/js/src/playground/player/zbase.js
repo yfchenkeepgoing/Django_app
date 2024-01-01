@@ -57,6 +57,14 @@ class Player extends AcGameObject {
             // this.img.src = "图片地址";
             this.img.src = this.photo;
         }
+
+        // 加上技能CD，技能冷却时间3秒钟
+        if (this.character === "me") {
+            this.fireball_coldtime = 3;
+            this.fireball_img = new Image(); // 创建火球术的技能图片
+            // 图片链接
+            this.fireball_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_9340c86053-fireball.png"
+        }
     }
 
     //需要start和update函数
@@ -117,6 +125,10 @@ class Player extends AcGameObject {
                 }
 
             } else if (e.which === 1) { // 若点击的是鼠标左键
+                // 在player.state变为fighting前，也不能按技能
+                if (outer.fireball_coldtime > outer.eps)
+                    return false;
+
                 // 因为接下来要实现一个闪现技能，也需要求tx, ty，因此把tx, ty放在if判断外面
                 let tx = (e.clientX- rect.left) / outer.playground.scale;
                 let ty = (e.clientY- rect.top) / outer.playground.scale;
@@ -138,7 +150,11 @@ class Player extends AcGameObject {
             // 在player.state变为fighting前，也不能按技能
             if (outer.playground.state !== "fighting")
                 return false; 
-            
+
+            // 技能还未冷却好
+            if (outer.fireball_coldtime > outer.eps)
+                return false;
+
             if (e.which === 81) {  // q
                 outer.cur_skill = "fireball" // 当前技能为火球
                 return false; // 表示之后不处理
@@ -164,6 +180,8 @@ class Player extends AcGameObject {
         // 相当于每次可以打掉玩家20%的血量
         let fireball = new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
         this.fireballs.push(fireball); // 将发射的fireball存入fireballs数组中
+
+        this.fireball_coldtime = 3; // 每次放完技能后，重置技能冷却时间，每3秒才能放出一个fireball
 
         return fireball; // 为了获取fireball的uuid，因此需要返回fireball
     }
@@ -245,14 +263,30 @@ class Player extends AcGameObject {
     }
 
     update() {
-        this.update_move();
+        this.spent_time += this.timedelta / 1000; // 时间累计
+
+        // 只有是自己，且对局没有结束（自己仍存活），才更新冷却时间
+        if (this.character === "me" && this.playground.state === "fighting") {
+            this.update_coldtime(); // 更新冷却时间
+        }
+            
+        this.update_move(); // 更新移动
+
         this.render();
+    }
+
+    // 负责更新技能冷却时间的函数
+    update_coldtime() {
+        // 每一帧的冷却时间更新为当前冷却时间减去和上一帧的时间间隔即可
+        this.fireball_coldtime -= this.timedelta / 1000;
+        // 冷却时间不能小于0
+        this.fireball_coldtime = Math.max(this.fireball_coldtime, 0);
+
+        // console.log(this.fireball_coldtime); // 输出技能冷却时间，用于调试
     }
 
     // 负责更新玩家移动
     update_move() {
-        this.spent_time += this.timedelta / 1000; // 时间累计
-
         // 要求每五秒钟发射一枚炮弹，本函数每一秒钟被调用60次，因此每次被调用时发射炮弹的概率是1/300
         // 保证五秒钟之后机器人开始攻击player
         if (this.character === "robot" && this.spent_time > 4 && Math.random() < 1 / 300.0) {
@@ -323,6 +357,40 @@ class Player extends AcGameObject {
             this.ctx.fillStyle = this.color; //设置颜色
             this.ctx.fill(); //填入颜色
             //玩家也要每一帧中都画一次，因此需要在update函数中调用render函数
+        }
+
+        // 只有自己，且对局尚未结束，才会用自己的冷却时间渲染技能图片
+        if (this.character === "me" && this.playground.state === "fighting") {
+            this.render_skill_coldtime()
+        }
+    }
+
+    // 用冷却时间渲染技能图片
+    // 原理：渲染技能图片，然后在冷却时间尚存时在其上面渲染一张半透明的图片
+    render_skill_coldtime() {
+        // 屏幕宽度16/9=1.78，第一个技能图标渲染到1.5 * height的位置
+        let x = 1.5, y = 0.9, r = 0.04; // 都是相对值，相对height
+
+        let scale = this.playground.scale;
+
+        // 渲染图片，复制自render函数
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(x * scale, y * scale, r * scale, 0, Math.PI * 2, false);
+        this.ctx.stroke();
+        this.ctx.clip();
+        this.ctx.drawImage(this.fireball_img, (x - r) * scale, (y - r) * scale, r * 2 * scale, r * 2 * scale); 
+        this.ctx.restore();
+
+        // 覆盖上半透明的蒙版，角度和冷却时间有关，画圆的代码复制自render函数
+        // 技能还没冷却好才这样画，避免了技能冷却好后技能图片被蓝色蒙版完全覆盖的问题
+        if (this.fireball_coldtime > 0) { 
+            this.ctx.beginPath();
+            this.ctx.moveTo(x * scale, y * scale); // 从圆心开始画
+            this.ctx.arc(x * scale, y * scale, r * scale, 0 - Math.PI / 2, Math.PI * 2 * (1 - this.fireball_coldtime / 3) - Math.PI / 2, true);  //arc(x,y,r,start,stop)
+            this.ctx.lineTo(x * scale, y * scale); // 画完后再移到圆心
+            this.ctx.fillStyle = "rgba(0, 0, 255, 0.6)"; //设置颜色：半透明的蓝色，透明度0.6
+            this.ctx.fill(); //填入颜色
         }
     }
 
