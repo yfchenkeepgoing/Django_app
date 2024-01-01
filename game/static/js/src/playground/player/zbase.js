@@ -61,6 +61,18 @@ class Player extends AcGameObject {
 
     //需要start和update函数
     start() {
+        // 每次调用start函数，加入room的玩家人数+1
+        this.playground.player_count ++ ;
+
+        // 将notice_board上的已就绪人数渲染出来
+        this.playground.notice_board.write("已就绪: " + this.playground.player_count + "人");
+
+        // 已就绪人数大于等于3，则状态变为fighting，各个player可以开始移动同时发射fireball
+        if (this.playground.player_count >= 3) {
+            this.playground.state = "fighting"; 
+            this.playground.notice_board.write("Fighting"); // 更改notice_board上的文字为Fighting
+        }
+
         if (this.character === "me") { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
             this.add_listening_events(); // 监听函数只能加给自己，不能加给敌人
         } else if (this.character === "robot") { // 敌人用ai操纵
@@ -81,6 +93,10 @@ class Player extends AcGameObject {
         
         // 读取鼠标点击坐标的函数，需要参数e
         this.playground.game_map.$canvas.mousedown(function(e) {
+            // 下面是移动和攻击的操作，只有在player的state为fighting时才可以进行
+            if (outer.playground.state !== "fighting")
+                return false; // return false是阻止默认事件的发生(点击事件不会继续处理)
+
             // const表示变量是常量
             const rect = outer.ctx.canvas.getBoundingClientRect();
 
@@ -119,6 +135,10 @@ class Player extends AcGameObject {
         // 用window来获取按键, e表示传入一个事件, 可以查询网上的keycode对照表
         // 火球用q键开启，q键的keycode是81
         $(window).keydown(function(e) {
+            // 在player.state变为fighting前，也不能按技能
+            if (outer.playground.state !== "fighting")
+                return false; 
+            
             if (e.which === 81) {  // q
                 outer.cur_skill = "fireball" // 当前技能为火球
                 return false; // 表示之后不处理

@@ -228,6 +228,39 @@ class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject�
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         //由于每一帧都需要重绘一遍地图，因此render函数应该是在update中执行，若在start中执行则只会在第一帧执行一次render函数
     }
+}// 提示牌：地图上方显示的信息栏，告诉我们当前有多少人就绪
+class NoticeBoard extends AcGameObject {
+    // 构造函数
+    constructor(playground) {
+        super(); // 调用父类的初始化函数
+
+        this.playground = playground;
+        this.ctx = this.playground.game_map.ctx; // 渲染则需要ctx
+        this.text = "已就绪: 0人"; // 初始显示的文本
+    }
+
+    // 这也是一个ac game object，故也需要实现start和update函数
+    start() {
+
+    }
+
+    // 还需要实现一个更新文本信息的函数，即计数牌中的文字内容
+    write(text) {
+        this.text = text;
+    }
+
+    update() {
+        this.render(); // 每帧渲染一遍
+    }
+
+    // ac game object需要每帧都渲染，因此需要渲染函数
+    render() {
+        // 渲染文本，来自yxc的讲义
+        this.ctx.font = "20px serif";
+        this.ctx.fillStyle = "white";
+        this.ctx.textAlign = "center";
+        this.ctx.fillText(this.text, this.playground.width / 2, 20); // 文本在宽度一半，高度距离顶部20的位置
+    }
 }class Particle extends AcGameObject {
     // 构造函数
     // vx和vy是速度的方向，需要playground因为需要ctx
@@ -342,6 +375,18 @@ class Player extends AcGameObject {
 
     //需要start和update函数
     start() {
+        // 每次调用start函数，加入room的玩家人数+1
+        this.playground.player_count ++ ;
+
+        // 将notice_board上的已就绪人数渲染出来
+        this.playground.notice_board.write("已就绪: " + this.playground.player_count + "人");
+
+        // 已就绪人数大于等于3，则状态变为fighting，各个player可以开始移动同时发射fireball
+        if (this.playground.player_count >= 3) {
+            this.playground.state = "fighting"; 
+            this.playground.notice_board.write("Fighting"); // 更改notice_board上的文字为Fighting
+        }
+
         if (this.character === "me") { // 判断是否为自己，自己是通过鼠标键盘操作的，敌人不能通过鼠标键盘操作
             this.add_listening_events(); // 监听函数只能加给自己，不能加给敌人
         } else if (this.character === "robot") { // 敌人用ai操纵
@@ -362,6 +407,10 @@ class Player extends AcGameObject {
         
         // 读取鼠标点击坐标的函数，需要参数e
         this.playground.game_map.$canvas.mousedown(function(e) {
+            // 下面是移动和攻击的操作，只有在player的state为fighting时才可以进行
+            if (outer.playground.state !== "fighting")
+                return false; // return false是阻止默认事件的发生(点击事件不会继续处理)
+
             // const表示变量是常量
             const rect = outer.ctx.canvas.getBoundingClientRect();
 
@@ -400,6 +449,10 @@ class Player extends AcGameObject {
         // 用window来获取按键, e表示传入一个事件, 可以查询网上的keycode对照表
         // 火球用q键开启，q键的keycode是81
         $(window).keydown(function(e) {
+            // 在player.state变为fighting前，也不能按技能
+            if (outer.playground.state !== "fighting")
+                return false; 
+            
             if (e.which === 81) {  // q
                 outer.cur_skill = "fireball" // 当前技能为火球
                 return false; // 表示之后不处理
@@ -985,6 +1038,17 @@ class Fireball extends AcGameObject {
         // 记录下模式：单人/多人
         this.mode = mode;
 
+        // 记录玩家的状态，玩家在room未满3人时，处于waiting状态，不可移动
+        // 当room达到3人时，进入fighting状态，可以移动
+        // 当玩家死后，进入over状态，不能发射fireball
+        this.state = "waiting";
+
+        // 在playground中创建notice_board
+        this.notice_board = new NoticeBoard(this); 
+
+        // 统计notice_board中的人数
+        this.player_count = 0;
+        
         this.resize(); // 将resize调整到产生game_map之后，这样resize也能作用到game_map
 
         this.players = []; //创建数组用于存储玩家

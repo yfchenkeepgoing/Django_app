@@ -79,6 +79,17 @@ class AcGamePlayground {
         // 记录下模式：单人/多人
         this.mode = mode;
 
+        // 记录玩家的状态，玩家在room未满3人时，处于waiting状态，不可移动
+        // 当room达到3人时，进入fighting状态，可以移动
+        // 当玩家死后，进入over状态，不能发射fireball
+        this.state = "waiting";
+
+        // 在playground中创建notice_board
+        this.notice_board = new NoticeBoard(this); 
+
+        // 统计notice_board中的人数
+        this.player_count = 0;
+        
         this.resize(); // 将resize调整到产生game_map之后，这样resize也能作用到game_map
 
         this.players = []; //创建数组用于存储玩家
