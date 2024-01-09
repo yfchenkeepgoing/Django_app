@@ -27,8 +27,8 @@ class MultiPlayer(AsyncWebsocketConsumer):
         self.room_name = None # 初始时room_name定义为空
 
         start = 0
-        if data['username'] != "cyflyingflat843":
-            start = 100000
+        # if data['username'] != "cyflyingflat843":
+        #     start = 100000
 
         # 暂定服务器有1000个房间，暴力枚举这1000个房间，超出1000个房间则报错
         for i in range(start, 100000000):
@@ -132,6 +132,19 @@ class MultiPlayer(AsyncWebsocketConsumer):
             }
         )
     
+    # 后端实现blink函数，类似于上面的move_to函数
+    async def blink(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "blink",
+                'uuid': data['uuid'],
+                'tx': data['tx'],
+                'ty': data['ty'], 
+            }
+        )
+    
     # 将更新后的信息群发后，需要一个函数来接收这些信息
     # 接收函数的名字就是type的关键字
     # 函数接收到信息后，直接将信息发送给前端
@@ -161,3 +174,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
         # 当接收到的事件类型是attack，则调用attack函数
         elif event == "attack":
             await self.attack(data)
+        # 当接收到的事件类型是blink，则调用blink函数
+        elif event == "blink":
+            await self.blink(data)

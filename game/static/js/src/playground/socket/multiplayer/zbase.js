@@ -39,6 +39,8 @@ class MultiPlayerSocket {
             } else if (event === "attack") {
                 // data中的信息不包含uuid，因为uuid就是本player的uuid，不需要在data中传输
                 outer.receive_attack(uuid, data.attackee_uuid, data.x, data.y, data.angle, data.damage, data.ball_uuid);
+            } else if (event === "blink") {
+                outer.receive_blink(uuid, data.tx, data.ty); // 路由
             }
         };
     }
@@ -185,6 +187,30 @@ class MultiPlayerSocket {
         if (attacker && attackee) {
             // 调用player/zbase.js中实现的接受并处理自己被攻击的信息的函数
             attackee.receive_attack(x, y, angle, damage, ball_uuid, attacker);
+        }
+    }
+
+    // 同步blink（闪现）函数
+    // 模仿send_move_to
+    send_blink(tx, ty) {
+        let outer = this;
+
+        this.ws.send(JSON.stringify(
+            {
+                'event': "blink",
+                'uuid': outer.uuid,
+                'tx': tx,
+                'ty': ty,
+            }));
+    }
+
+    // 模仿receive_move_to函数
+    receive_blink(uuid, tx, ty) {
+        let player = this.get_player(uuid);
+
+        // 若player还存在
+        if (player) {
+            player.blink(tx, ty);
         }
     }
 }

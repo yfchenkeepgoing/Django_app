@@ -152,6 +152,11 @@ class Player extends AcGameObject {
                         return false;
 
                     outer.blink(tx, ty); // 调用闪现函数
+
+                    // 多人模式下广播闪现函数
+                    if (outer.playground.mode === "multi mode") {
+                        outer.playground.mps.send_blink(tx, ty);
+                    }
                 }
                 outer.cur_skill = null; // 当前技能被释放掉
             }
@@ -463,6 +468,10 @@ class Player extends AcGameObject {
 
     // 当前玩家血量耗尽后，删除当前玩家
     on_destroy() {
+        // 当前player死后，当前playground的状态改为over，不能再做任何移动或者发炮的操作
+        if (this.character === "me")
+            this.playground.state = "over";
+
         for (let i = 0; i < this.playground.players.length; i ++ ) {
             if (this.playground.players[i] == this) {
                 this.playground.players.splice(i, 1);
