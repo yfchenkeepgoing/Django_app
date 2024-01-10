@@ -19,7 +19,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
     # 可能用户离线了，但没有执行以下函数
     # 用户离线但不会执行以下函数的特殊情况：用户电脑断电，无法发送请求，也就无法执行以下函数
     async def disconnect(self, close_code):
-        print('disconnect')
+        # print('disconnect')
         await self.channel_layer.group_discard(self.room_name, self.channel_name)
 
     # async：异步函数
@@ -145,6 +145,19 @@ class MultiPlayer(AsyncWebsocketConsumer):
             }
         )
     
+    # 后端实现message函数
+    async def message(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "message",
+                'uuid': data['uuid'],
+                'username': data['username'],
+                'text': data['text'],
+            }
+        )
+    
     # 将更新后的信息群发后，需要一个函数来接收这些信息
     # 接收函数的名字就是type的关键字
     # 函数接收到信息后，直接将信息发送给前端
@@ -177,3 +190,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
         # 当接收到的事件类型是blink，则调用blink函数
         elif event == "blink":
             await self.blink(data)
+        # 当接收到的事件类型是message，则调用message函数
+        elif event == "message":
+            await self.message(data)

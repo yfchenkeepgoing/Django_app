@@ -47,6 +47,7 @@ class ChatField {
                     outer.$input.val("");
                     // 调用将输入的信息添加到历史记录中的函数
                     outer.add_message(username, text);
+                    outer.playground.mps.send_message(username, text); // 调用send_message函数进行同步
                 }
                 return false; // 回车按键不继续向后传递
             }

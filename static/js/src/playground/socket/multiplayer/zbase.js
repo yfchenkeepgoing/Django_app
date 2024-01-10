@@ -41,6 +41,8 @@ class MultiPlayerSocket {
                 outer.receive_attack(uuid, data.attackee_uuid, data.x, data.y, data.angle, data.damage, data.ball_uuid);
             } else if (event === "blink") {
                 outer.receive_blink(uuid, data.tx, data.ty); // 路由
+            } else if (event === "message") {
+                outer.receive_message(uuid, data.username, data.text);
             }
         };
     }
@@ -212,5 +214,34 @@ class MultiPlayerSocket {
         if (player) {
             player.blink(tx, ty);
         }
+    }
+
+    // 同步各玩家发送的message
+    // 模仿上面的同步函数写法即可
+    send_message(username, text) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "message",
+            'uuid': outer.uuid,
+            'username': username,
+            'text': text,
+        }))
+    }
+
+    // 需要知道是哪个玩家发的，因此需要参数uuid
+    // receive_message(uuid, text) {
+    //     let player = this.get_player(uuid); // 通过uuid找到player
+
+    //     // 该player还存活，则让其说话
+    //     if (player) {
+    //         // 调用add_message函数让该玩家说的话显示在历史记录中
+    //         player.playground.chat_field.add_message(player.username, text); 
+    //     }
+    // }
+
+    // 需要知道是哪个玩家发的，因此需要参数uuid
+    // 修改游戏机制：玩家死后依然可以说话，此时player不存在，因此不能直接由uuid获取username，而需要直接将username传入
+    receive_message(uuid, username, text) {
+        this.playground.chat_field.add_message(username, text); 
     }
 }
