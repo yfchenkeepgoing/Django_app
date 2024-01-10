@@ -109,7 +109,7 @@ class Player extends AcGameObject {
         this.playground.game_map.$canvas.mousedown(function(e) {
             // 下面是移动和攻击的操作，只有在player的state为fighting时才可以进行
             if (outer.playground.state !== "fighting")
-                return false; // return false是阻止默认事件的发生(点击事件不会继续处理)
+                return true; // return false是阻止默认事件的发生(点击事件不会继续处理)
 
             // const表示变量是常量
             const rect = outer.ctx.canvas.getBoundingClientRect();
@@ -164,7 +164,21 @@ class Player extends AcGameObject {
 
         // 用window来获取按键, e表示传入一个事件, 可以查询网上的keycode对照表
         // 火球用q键开启，q键的keycode是81
-        $(window).keydown(function(e) {
+        this.playground.game_map.$canvas.keydown(function(e) {
+            // 游戏开始前就可以聊天
+            // enter键和ESC键的编号分别为13和27
+            if (e.which === 13) { // enter键
+                // 单人模式下不需要聊天，多人模式下才需要聊天
+                if (outer.playground.mode === "multi mode") { // 打开聊天框
+                    outer.playground.chat_field.show_input(); // 调用chat_field中的show_input函数展示输入内容
+                    return false;
+                }
+            } else if (e.which === 27) { // esc键
+                if (outer.playground.mode === "multi mode") { // 关闭聊天框
+                    outer.playground.chat_field.hide_input(); // 调用chat_field中的hide_input函数隐藏输入内容
+                }
+            }
+
             // console.log(e.which); // 不知道某个键对应的数字，输出即可
             // 在player.state变为fighting前，也不能按技能
             if (outer.playground.state !== "fighting")

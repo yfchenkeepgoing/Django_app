@@ -9,7 +9,8 @@ class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject�
         this.playground = playground;
 
         //在playground中渲染一个画面，需要用到js提供的渲染画面的工具canvas
-        this.$canvas = $(`<canvas></canvas>`);
+        // 想让某个元素可以监听读入事件，需要在该元素上加上属性tabindex
+        this.$canvas = $(`<canvas tabindex=0></canvas>`);
         //未来操作canvas中的ctx
         this.ctx = this.$canvas[0].getContext('2d'); //canvas是一个数组，目前的canvas是一个2d的画布
         //设置画布的宽度和高度，不懂api的话建议看菜鸟教程，IDE不一定能自动补全
@@ -21,8 +22,9 @@ class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject�
     }
 
     //GameMap中也需要实现两个函数，分别是start和update
+    // 聚焦到canvas上，否则无法获取读入信息
     start() {
-
+        this.$canvas.focus(); // focus：聚焦
     }
 
     // gamemap中的resize函数可以动态地修改黑框（地图）的长宽

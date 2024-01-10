@@ -235,3 +235,44 @@
     transform: translate(-50%, -50%);/*将锚点从左上角改为中心*/
 }
 
+/*历史记录*/
+.ac-game-chat-field-history {
+    position: absolute; /*绝对位置：因为历史记录需要覆盖在canvas上面*/
+    /*放置在左下角*/
+    top: 66%; 
+    left: 20%;
+
+    transform: translate(-50%, -50%);
+
+    width: 20%;
+    height: 32%;
+
+    color: white;
+    font-size: 2vh;
+
+    padding: 5px; /*历史记录的内边距5像素*/
+    overflow: auto; /*超出距离则会自动加上滚动条*/
+}
+
+/*滚动条*/
+.ac-game-chat-field-history::-webkit-scrollbar {
+    width: 0; /*将历史记录的滚动条的宽度变为0，相当于隐藏了滚动条*/
+}
+
+/*输入框*/
+.ac-game-chat-field-input {
+    position: absolute; /*绝对位置：因为输入框需要覆盖在canvas上面*/
+    top: 86%;
+    left: 20%;
+    transform: translate(-50%, -50%);
+
+    width: 20%;
+    height: 3vh;
+
+    color: white;
+    font-size: 2vh;
+
+    background-color: rgba(222,225,230, 0.2);
+}
+
+

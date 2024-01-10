@@ -178,7 +178,110 @@ let AC_GAME_ANIMATION = function(timestamp) {   //timestrap为时间戳，这个
 //当浏览器准备好进行下一次重绘时，它会自动调用AC_GAME_ANIMATION函数，并传入一个时间戳（timestamp）表示当前时间。
 requestAnimationFrame(AC_GAME_ANIMATION);  
 
-class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject类的派生类，因此GameMap可以用AcGameObject中的函数
+// 聊天框不画在canvas地图中，它仅仅是一个html元素，因此不需要继承自AcGameObject
+class ChatField {
+    // 构造函数
+    constructor(playground) {
+        this.playground = playground;
+
+        // 历史记录区域
+        this.$history = $(`<div class="ac-game-chat-field-history">历史记录</div>`);
+
+        // 输入区域
+        this.$input = $(`<input type="text" class="ac-game-chat-field-input">`);
+
+        // 初始时，两区域都隐藏
+        this.$history.hide(); // hide是jquery的api，可以隐藏掉一个元素
+        this.$input.hide();
+
+        this.func_id = null; // 记录下函数的id，方便在打开输入框后删去之前展示历史记录的计时函数
+
+        // 将两区域加入地图中
+        this.playground.$playground.append(this.$history);
+        this.playground.$playground.append(this.$input);
+
+        this.start();
+    }
+
+    start() {
+        this.add_listening_events();
+    }
+
+    // 监听函数
+    add_listening_events() {
+        let outer = this;
+
+        this.$input.keydown(function(e) {
+            if (e.which === 27) { // esc: 27
+                // 此时不需判断是否是多人模式，单人模式下不需打开和退出聊天框
+                outer.hide_input(); // 关闭聊天框
+                return false;
+            } else if (e.which === 13) {
+                // 按下enter键，调用将输入的信息添加到历史记录中的函数
+                let username = outer.playground.root.settings.username;
+                let text = outer.$input.val();
+
+                // 若信息不为空
+                if (text) {
+                    // 清空输入框
+                    outer.$input.val("");
+                    // 调用将输入的信息添加到历史记录中的函数
+                    outer.add_message(username, text);
+                }
+                return false; // 回车按键不继续向后传递
+            }
+        });
+    }
+
+    // 渲染函数：起到将字符串封装为html对象的作用
+    render_message(message) {
+        return $(`<div>${message}</div>`);
+    }
+
+    // 在历史记录中添加新信息
+    // 两个参数：发送消息的人，发送的内容
+    add_message(username, text) {
+        this.show_history(); // 每次添加新信息时，需要展示历史记录
+        let message = `[${username}]${text}`; // js语法：中括号内部写人名，中括号外部写信息
+        // 渲染message并将其添加到history中
+        this.$history.append(this.render_message(message));
+        // 将历史记录的滚动条移到最下面
+        this.$history.scrollTop(this.$history[0].scrollHeight);
+    }
+
+    // 展示历史记录的函数
+    show_history() {
+        let outer = this;
+        // this.show()瞬间出来，不好看，改为慢慢出来
+        this.$history.fadeIn(); // fadeIn: 慢慢显示出来
+
+        if (this.func_id) clearTimeout(this.func_id); // 若之前存在setTimeout函数，则将其删去，重新开始计时并显示3秒
+
+        // 显示3秒，即3秒后关闭
+        this.func_id = setTimeout(function() {
+            outer.$history.fadeOut(); // 慢慢消失
+            outer.func_id = null; // 函数结束后删去func_id
+        }, 3000); 
+    }
+
+    // 展示输入内容
+    show_input() {
+        // 打开输入框时就应该看到历史记录
+        this.show_history();
+
+        this.$input.show();
+        // 要先聚焦，才能在任何一个元素上输入内容
+        this.$input.focus();
+    }
+
+    // 隐藏输入内容
+    hide_input() {
+        this.$input.hide();
+
+        // input关闭后，重新聚焦到地图上
+        this.playground.game_map.$canvas.focus();
+    }
+}class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject类的派生类，因此GameMap可以用AcGameObject中的函数
     //调用函数时，会先看当前类中有无这个函数的定义，没有就会看基类中有无这个函数的定义
     //构造函数
     constructor(playground) {
@@ -189,7 +292,8 @@ class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject�
         this.playground = playground;
 
         //在playground中渲染一个画面，需要用到js提供的渲染画面的工具canvas
-        this.$canvas = $(`<canvas></canvas>`);
+        // 想让某个元素可以监听读入事件，需要在该元素上加上属性tabindex
+        this.$canvas = $(`<canvas tabindex=0></canvas>`);
         //未来操作canvas中的ctx
         this.ctx = this.$canvas[0].getContext('2d'); //canvas是一个数组，目前的canvas是一个2d的画布
         //设置画布的宽度和高度，不懂api的话建议看菜鸟教程，IDE不一定能自动补全
@@ -201,8 +305,9 @@ class GameMap extends AcGameObject { //GameMap是游戏引擎中的AcGameObject�
     }
 
     //GameMap中也需要实现两个函数，分别是start和update
+    // 聚焦到canvas上，否则无法获取读入信息
     start() {
-
+        this.$canvas.focus(); // focus：聚焦
     }
 
     // gamemap中的resize函数可以动态地修改黑框（地图）的长宽
@@ -423,7 +528,7 @@ class Player extends AcGameObject {
         this.playground.game_map.$canvas.mousedown(function(e) {
             // 下面是移动和攻击的操作，只有在player的state为fighting时才可以进行
             if (outer.playground.state !== "fighting")
-                return false; // return false是阻止默认事件的发生(点击事件不会继续处理)
+                return true; // return false是阻止默认事件的发生(点击事件不会继续处理)
 
             // const表示变量是常量
             const rect = outer.ctx.canvas.getBoundingClientRect();
@@ -478,7 +583,21 @@ class Player extends AcGameObject {
 
         // 用window来获取按键, e表示传入一个事件, 可以查询网上的keycode对照表
         // 火球用q键开启，q键的keycode是81
-        $(window).keydown(function(e) {
+        this.playground.game_map.$canvas.keydown(function(e) {
+            // 游戏开始前就可以聊天
+            // enter键和ESC键的编号分别为13和27
+            if (e.which === 13) { // enter键
+                // 单人模式下不需要聊天，多人模式下才需要聊天
+                if (outer.playground.mode === "multi mode") { // 打开聊天框
+                    outer.playground.chat_field.show_input(); // 调用chat_field中的show_input函数展示输入内容
+                    return false;
+                }
+            } else if (e.which === 27) { // esc键
+                if (outer.playground.mode === "multi mode") { // 关闭聊天框
+                    outer.playground.chat_field.hide_input(); // 调用chat_field中的hide_input函数隐藏输入内容
+                }
+            }
+
             // console.log(e.which); // 不知道某个键对应的数字，输出即可
             // 在player.state变为fighting前，也不能按技能
             if (outer.playground.state !== "fighting")
@@ -1237,6 +1356,9 @@ class Fireball extends AcGameObject {
             }
         }
         else if (mode === "multi mode") {
+            // 在多人模式下将chat_field添加到playground中
+            this.chat_field = new ChatField(this);
+             
             // 将MultiPlayerSocket添加到playground中
             this.mps = new MultiPlayerSocket(this); // mps: multi player socket
             this.mps.uuid = this.players[0].uuid; // players[0]是自己，始终是第一个被加入到数组中的
