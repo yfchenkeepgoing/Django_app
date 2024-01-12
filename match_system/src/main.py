@@ -44,7 +44,7 @@ class Pool:
     def __init__(self):
         self.players = []
     
-    # 添加玩家的函数
+    # 向匹配池中添加玩家的函数
     def add_player(self, player):
         self.players.append(player)
     
@@ -58,7 +58,7 @@ class Pool:
     
     # 匹配成功后，输出三个人的信息
     def match_success(self, ps):
-        print("Match Success: %s %s %s" % (ps[0], ps[1], ps[2]))
+        print("Match Success: %s %s %s" % (ps[0].username, ps[1].username, ps[2].username))
 
     # 每匹配一次，等待时间+1
     def increase_waiting_time(self):
@@ -93,7 +93,9 @@ class Pool:
 # 删去原有内容，实现add_player即可
 class MatchHandler:
     # 5个参数，同match.thrift中的定义
+    # 向队列中添加玩家的函数
     def add_player(self, score, uuid, username, photo, channel_name):
+        print("Add Player: %s %d" % (username, score)) # 输出添加的玩家的用户名和分数，用于调试
         # 若请求进入时正在匹配过程中，则需要将请求缓存，这就需要消息队列
         # 之前在cpp中手写了消息队列，而python中自带消息队列
         player = Player(score, uuid, username, photo, channel_name)

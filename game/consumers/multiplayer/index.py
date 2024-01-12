@@ -3,6 +3,15 @@ import json
 from django.conf import settings # 引用settings.py中的变量（ROOM_CAPCITY）
 from django.core.cache import cache # 用redis存每局对战的信息
 
+# thrift client需要的头文件
+from thrift import Thrift
+from thrift.transport import TSocket
+from thrift.transport import TTransport
+from thrift.protocol import TBinaryProtocol
+
+# 引入thrift server(match server)
+from match_system.src.match_server.match_service import Match
+
 # 处理wss连接的class
 class MultiPlayer(AsyncWebsocketConsumer):
 
@@ -19,72 +28,39 @@ class MultiPlayer(AsyncWebsocketConsumer):
     # 可能用户离线了，但没有执行以下函数
     # 用户离线但不会执行以下函数的特殊情况：用户电脑断电，无法发送请求，也就无法执行以下函数
     async def disconnect(self, close_code):
-        # print('disconnect')
-        await self.channel_layer.group_discard(self.room_name, self.channel_name)
+        # 若room_name不为空，则断联后需要将该room从组里删去
+        if self.room_name:
+            await self.channel_layer.group_discard(self.room_name, self.channel_name)
 
     # async：异步函数
+    # 重写create_player函数，作为thrift client
+    # 在新的玩家被创建之后，不立即返回当前对局中有谁，而是给thrfit server(匹配服务)发送请求
+    # 匹配服务匹配成功后，将结果告诉thrift client，这个过程会有延时
     async def create_player(self, data):
-        self.room_name = None # 初始时room_name定义为空
+        # 初始化room_name
+        self.room_name = None
+        self.uuid = data['uuid']
 
-        start = 0
-        # if data['username'] != "cyflyingflat843":
-        #     start = 100000
+        # Make socket
+        transport = TSocket.TSocket('127.0.0.1', 9090)
 
-        # 暂定服务器有1000个房间，暴力枚举这1000个房间，超出1000个房间则报错
-        for i in range(start, 100000000):
-            name = "room-%d" % (i) # room的名字，从room-0到room-999
-            # 若房间名不存在，或房间中人数少于上限，则该房间名可用
-            # len(cache.get(name)):获取与 name 键关联的值的长度
-            if not cache.has_key(name) or len(cache.get(name)) < settings.ROOM_CAPCITY:
-                self.room_name = name
-                break
-        
-        # 若没有有空位的房间，则直接返回，不要建立连接，不要accept加入的新player
-        # 若有有空位的房间，则accept加入新player的请求
-        if not self.room_name:
-            return
+        # Buffering is critical. Raw sockets are very slow
+        transport = TTransport.TBufferedTransport(transport)
 
-        # 没有该房间，则创建房间
-        if not cache.has_key(self.room_name):
-            cache.set(self.room_name, [], 3600) # 值为空链表，每局对战的有效期为3600s，即一小时
+        # Wrap in a protocol
+        protocol = TBinaryProtocol.TBinaryProtocol(transport)
 
-        # 为了向新创建的player所在的窗口发送所有已有玩家的信息，需先遍历所有已有玩家
-        # dumps：将一个字典变为字符串, 字典中包含uuid, username, photo
-        # uuid用于表示从哪个窗口发来的
-        for player in cache.get(self.room_name):
-            await self.send(text_data=json.dumps({
-                'event': "create_player",
-                'uuid': player['uuid'],
-                'username': player['username'],
-                'photo': player['photo'],
-            }))
+        # Create a client to use the protocol encoder
+        client = Match.Client(protocol)
 
-        await self.channel_layer.group_add(self.room_name, self.channel_name)
+        # Connect!
+        transport.open()
 
-        # 找到当前的对局中的所有玩家
-        players = cache.get(self.room_name)
-        # 将新加入的玩家加入到当前对局的玩家列表中
-        players.append({
-            'uuid': data['uuid'],
-            'username': data['username'],
-            'photo': data['photo']
-        })
-        # 将更新后的玩家列表重新加入到redis中
-        cache.set(self.room_name, players, 3600) # 有效期1小时
+        # 调用main.py中的add_player函数(向队列中添加玩家)
+        client.add_player(1500, data['uuid'], data['username'], data['photo'], self.channel_name) # 初始分数为1500
 
-        # 将更新后的信息群发给组（group/room）内的所有人
-        await self.channel_layer.group_send(
-            self.room_name, # 第一个参数：group的名字，一个room即为一个group
-            # 第二个参数：需要发送的信息
-            {
-                # type关键字非常重要，相当于把以下信息发送给名为group_send_event的函数
-                'type': "group_send_event", 
-                'event': "create_player",
-                'uuid': data['uuid'],
-                'username': data['username'],
-                'photo': data['photo'],
-            }
-        )
+        # Close!
+        transport.close()
     
     # 后端实现move_to函数，类似于上面的create_player函数
     async def move_to(self, data):
