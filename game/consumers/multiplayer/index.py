@@ -142,6 +142,11 @@ class MultiPlayer(AsyncWebsocketConsumer):
 
     # 由于所有需要广播的函数形态相同，所以把所有事件的群发函数写成一个即可
     async def group_send_event(self, data):
+        # 更新room_name
+        if not self.room_name:
+            keys = cache.keys('*%s*' % (self.uuid)) # 通过uuid找到room_name
+            if keys: # 若其中有元素
+                self.room_name = keys[0]
         await self.send(text_data=json.dumps(data))
 
     # 第三个函数：receive

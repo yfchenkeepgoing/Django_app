@@ -24,6 +24,10 @@ from queue import Queue # python中自带的消息队列，这个队列是一个
 from time import sleep # 可以让进程休眠1s
 from threading import Thread # 用于开线程的库
 
+from acapp.asgi import channel_layer # 引入asgi.py中通过get channel layer得到的channel_layer，用于match server和web server间的通信
+from asgiref.sync import async_to_sync # 将index.py中的多线程（async）变为单线程
+from django.core.cache import cache # 将匹配成功的信息存储在redis中
+
 queue = Queue() # 全局的消息队列
 
 # 实现player类
@@ -59,6 +63,41 @@ class Pool:
     # 匹配成功后，输出三个人的信息
     def match_success(self, ps):
         print("Match Success: %s %s %s" % (ps[0].username, ps[1].username, ps[2].username))
+        # room_name取名为room-a.uuid-b.uuid-c.uuid
+        # 这样取名的目的，查找a所在的room_name，只需要cache.keys('*a.uuid*')
+        # 不这样做也可，但需要在redis中存一个映射，比较麻烦
+        room_name = "room-%s-%s-%s" % (ps[0].uuid, ps[1].uuid, ps[2].uuid)
+        players = [] # 未来需存入redis中的信息
+        # 遍历匹配成功的玩家
+        for p in ps:
+            async_to_sync(channel_layer.group_add)(room_name, p.channel_name) # group_add函数异步转同步
+            # 存入redis中的信息
+            players.append({
+                'uuid': p.uuid,
+                'username': p.username,
+                'photo': p.photo,
+                # 血条，方便下节课用于更新战绩
+                # 战绩最好在服务端计算，因为在客户端计算容易让玩家作弊，因此需要在服务器端记录血条
+                'hp': 100, # 血条初始化为100
+            })
+        cache.set(room_name, players, 3600)  # 信息存入redis, 有效时间：1小时
+        
+        # 将3名匹配在一起的玩家加入一个room后，就能向room内广播玩家的信息，以在3个窗口中创建另外两名玩家
+        # 在三名玩家全部加入room之后，再广播
+        # 实现匹配的进程直接调用web server中index.py中的进程，即实现了进程间的通信
+        for p in ps:
+            async_to_sync(channel_layer.group_send)(
+                room_name,
+                # 参数参照index.py中group_send函数的参数的用法
+                {
+                    'type': "group_send_event",
+                    'event': "create_player",
+                    'uuid': p.uuid,
+                    'username': p.username,
+                    'photo': p.photo,
+                }
+            )
+
 
     # 每匹配一次，等待时间+1
     def increase_waiting_time(self):
