@@ -20,6 +20,9 @@ class Player(models.Model):
     # 默认为空，最大长度为50（多开几位，空间不值钱），可以为空(blank=True, null=True)
     openid = models.CharField(default="", max_length=50, blank=True, null=True)
 
+    # 添加战斗力数据，匹配系统据此匹配玩家
+    score = models.IntegerField(default=1500) # 初试分数为1500
+
     # 用于显示每个player数据展示在admin页面中的名字
     def __str__(self):
         return str(self.user) # 直接返回用户的用户名

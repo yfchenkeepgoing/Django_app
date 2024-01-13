@@ -10,13 +10,13 @@ https://docs.djangoproject.com/en/3.2/howto/deployment/asgi/
 import os
 
 import django # 引入django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'acapp.settings')
+django.setup() # 设置环境变量
+
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 from game.routing import websocket_urlpatterns
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'acapp.settings')
-django.setup() # 设置环境变量
 
 from channels.layers import get_channel_layer # 一定要写在完成环境变量设置的语句之后
 # 记录下channel_layer，可以帮助我们实现在channels外面调用channels内部函数的功能

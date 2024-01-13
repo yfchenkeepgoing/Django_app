@@ -12,6 +12,9 @@ from thrift.protocol import TBinaryProtocol
 # 引入thrift server(match server)
 from match_system.src.match_server.match_service import Match
 
+from game.models.player.player import Player # 引入数据库
+from channels.db import database_sync_to_async # 数据库的操作本来是串行的，但在channels中要变成并行操作，需要此api
+
 # 处理wss连接的class
 class MultiPlayer(AsyncWebsocketConsumer):
 
@@ -53,11 +56,19 @@ class MultiPlayer(AsyncWebsocketConsumer):
         # Create a client to use the protocol encoder
         client = Match.Client(protocol)
 
+        # 处理数据库时的写法：需要定义一个函数: 通过用户名来找到玩家
+        # user的username: user__username
+        def db_get_player():
+            return Player.objects.get(user__username=data['username'])
+
+        # 取得player，记得加上await，因为变成了一个异步函数
+        player = await database_sync_to_async(db_get_player)()
+
         # Connect!
         transport.open()
 
         # 调用main.py中的add_player函数(向队列中添加玩家)
-        client.add_player(1500, data['uuid'], data['username'], data['photo'], self.channel_name) # 初始分数为1500
+        client.add_player(player.score, data['uuid'], data['username'], data['photo'], self.channel_name) 
 
         # Close!
         transport.close()
