@@ -62,6 +62,8 @@ class AcGameObject {
     }
 }
 
+// console.log("run!"); // 调试用，展示全局变量的问题
+
 let last_timestamp; //记录上一帧的时刻，这一帧和上一帧的时刻之差就是时间间隔timedelta
 //不用初始化last_timestamp，因为所有物体第一次执行都会执行第一帧（start函数）,start函数中不需要用到last_timestamp
 //所有物体都被执行完第一帧后，last_timestamp就会被附上初值，执行第二帧及以后的帧last_timestamp就可以被用到

@@ -20,14 +20,39 @@ class AcGamePlayground {
         return colors[Math.floor(Math.random() * 5)]; // 随机数为0-5，下取整
     }
 
+    // 创建唯一编号的函数，复制自ac_game_object/zbase.js中
+    // 可以随机一个8位数，出现重复的概率很低，可以认为它是唯一的
+    create_uuid() {
+        let res = "";
+        for (let i = 0; i < 8; i ++ ) {
+            // Math.random()返回[0, 1)之间的随机数, floor下取整, parseInt将其转换为int
+            let x = parseInt(Math.floor(Math.random() * 10)); 
+            res += x;
+        }
+        return res;
+    }
+
     //所有对象最好都有start函数，用于给对象绑定监听函数或者设置初值
     start() {
+        // console.log(AC_GAME_OBJECTS); // 输出全局变量，用于调试
+
         let outer = this;
+        let uuid = this.create_uuid(); // 创建一个游戏窗口的唯一的标志：uuid
 
         // 当用户改变窗口大小时，本函数/事件会被触发
-        $(window).resize(function() {
+        // on来绑定，off来移除
+        // 只需在acapp中移除对window的监听，网页端由于只有这个游戏，随着网页的关闭，window自然也不再被游戏监听了
+        $(window).on(`resize.${uuid}`, function() {
+            // console.log('resize'); // 调试用
             outer.resize(); // 用户改变窗口大小时，调整界面大小
         }); 
+
+        // 需要监听关闭窗口的事件，需要在关闭窗口事件触发前移除函数
+        if (this.root.AcWingOS) { // 判断是否是acapp端
+            this.root.AcWingOS.api.window.on_close(function() {
+                $(window).off(`resize.${uuid}`); // 解除绑定
+            });
+        }
     }
 
     // 实现可以调整游戏界面长宽比的函数

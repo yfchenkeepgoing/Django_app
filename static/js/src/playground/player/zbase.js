@@ -165,6 +165,7 @@ class Player extends AcGameObject {
         // 用window来获取按键, e表示传入一个事件, 可以查询网上的keycode对照表
         // 火球用q键开启，q键的keycode是81
         this.playground.game_map.$canvas.keydown(function(e) {
+            // console.log("keydown"); // 调试用
             // 游戏开始前就可以聊天
             // enter键和ESC键的编号分别为13和27
             if (e.which === 13) { // enter键
