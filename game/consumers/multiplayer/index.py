@@ -102,7 +102,51 @@ class MultiPlayer(AsyncWebsocketConsumer):
         )
     
     # 后端实现attack函数，类似于上面的create_player函数，move_to函数和shoot_fireball函数
+    # 在本函数中实现对战绩的更新
     async def attack(self, data):
+        # 排除room_name不存在的极端情况
+        if not self.room_name:
+            return
+        
+        players = cache.get(self.room_name) # 从redis中取出当前对局的所有玩家信息
+
+        # 若players为空，则直接返回
+        # 可能存在清空，a和b先后发炮，a的炮弹先击中b，此时对局结束，redis中该对局的信息清空，b的炮弹再击中a时，就不应该继续判定，而应该直接返回
+        if not players:
+            return
+        
+        # 更新玩家血量(即更新redis中存储的信息)
+        for player in players:
+            if player['uuid'] == data['attackee_uuid']: # 若枚举到的玩家是被攻击者
+                player['hp'] -= 25 # hp减少25
+        
+        # 统计剩余的玩家人数
+        remain_cnt = 0
+        for player in players:
+            if player['hp'] > 0:
+                remain_cnt += 1
+        
+        # 更新redis中room_name中的玩家信息
+        if remain_cnt > 1:
+            if self.room_name:
+                cache.set(self.room_name, players, 3600)
+
+        # 若玩家人数小于等于1，说明对局结束，产生了胜者和所有败者，此时需要更新数据库中的战绩(score)
+        else:
+            # 在异步中使用数据库，需要封装出一个异步函数
+            def db_update_player_score(username, score):
+                # get和filter的区别：get只要返回的结果不是1个就会报异常，filter则不会报异常，此处用get/filter皆可
+                player = Player.objects.get(user__username=username)
+                player.score += score
+                player.save()
+
+            for player in players:
+                if player['hp'] <= 0:
+                    # 异步函数调用前一定需要加await
+                    await database_sync_to_async(db_update_player_score)(player['username'], -5)
+                else:
+                    await database_sync_to_async(db_update_player_score)(player['username'], 10)
+
         await self.channel_layer.group_send(
             self.room_name,
             # 参数较多，参照multiplayer/zbase.js中的send_attack函数发送的参数
