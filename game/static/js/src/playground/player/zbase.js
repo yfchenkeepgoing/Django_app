@@ -225,6 +225,7 @@ class Player extends AcGameObject {
         let fireball = new Fireball(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, 0.01);
         this.fireballs.push(fireball); // 将发射的fireball存入fireballs数组中
 
+        // 为方便调试，暂时调为0.1秒，调试完成后记得关闭无限火力模式
         this.fireball_coldtime = 3; // 每次放完技能后，重置技能冷却时间，每3秒才能放出一个fireball
 
         return fireball; // 为了获取fireball的uuid，因此需要返回fireball
@@ -328,6 +329,8 @@ class Player extends AcGameObject {
     update() {
         this.spent_time += this.timedelta / 1000; // 时间累计
 
+        this.update_win(); // 每次执行update函数均需要判断自己是否胜利
+
         // 只有是自己，且对局没有结束（自己仍存活），才更新冷却时间
         if (this.character === "me" && this.playground.state === "fighting") {
             this.update_coldtime(); // 更新冷却时间
@@ -336,6 +339,16 @@ class Player extends AcGameObject {
         this.update_move(); // 更新移动
 
         this.render();
+    }
+
+    // 判断是否胜利，每秒判断60次
+    update_win() {
+        // 游戏状态必须为fighting，否则waiting状态也满足要求
+        // 玩家只剩下自己
+        if (this.playground.state === "fighting" && this.character === "me" && this.playground.players.length === 1) {
+            this.playground.state = "over"; // 结束
+            this.playground.score_board.win(); // 触发胜利的函数
+        }
     }
 
     // 负责更新技能冷却时间的函数
@@ -484,8 +497,14 @@ class Player extends AcGameObject {
     // 当前玩家血量耗尽后，删除当前玩家
     on_destroy() {
         // 当前player死后，当前playground的状态改为over，不能再做任何移动或者发炮的操作
-        if (this.character === "me")
-            this.playground.state = "over";
+        if (this.character === "me") {
+            // 如果当前是fighting状态且自己被删除，则说明失败，触发lose函数
+            // 获胜后，游戏结束(state = "over")，点击鼠标返回菜单界面前会移除所有的玩家，若不判断是否是fighting状态，则会被误判为失败
+            if (this.playground.state === "fighting") {
+                this.playground.state = "over";
+                this.playground.score_board.lose();
+            }
+        }
 
         for (let i = 0; i < this.playground.players.length; i ++ ) {
             if (this.playground.players[i] == this) {

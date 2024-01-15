@@ -112,6 +112,9 @@ class AcGamePlayground {
         // 在playground中创建notice_board
         this.notice_board = new NoticeBoard(this); 
 
+        // 在playground中创建score_board，显示胜利/失败
+        this.score_board = new ScoreBoard(this);
+
         // 统计notice_board中的人数
         this.player_count = 0;
         
@@ -150,6 +153,40 @@ class AcGamePlayground {
     }
 
     hide() {  // 关闭playground界面
+        // 删除所有players
+        // 若players存在（有可能不存在，因为新创建playground后就会先调用一遍this.hide()，此时players尚不存在）
+        // 不能用for循环，数组下标会出问题
+        while(this.players && this.players.length > 0) {
+            // destroy函数在ac_game_objects/zbase.js中定义，其中的on_destroy函数在player/zbase.js中定义
+            // on_destroy函数会将players[0]从playground的players数组中删去
+            this.players[0].destroy(); // 移除这名玩家
+        }
+
+        // 删除game_map
+        if (this.game_map) {
+            this.game_map.destroy();
+            this.game_map = null;
+        }
+
+        // 删除notice_board
+        if (this.notice_board) {
+            this.notice_board.destroy();
+            this.notice_board = null;
+        }
+
+        // 删除score_board
+        if (this.score_board) {
+            this.score_board.destroy();
+            this.score_board = null;
+        }
+
+        // 删除html
+        // 在gam_map中添加过一个html: this.$canvas = $(`<canvas tabindex=0></canvas>`);，也需要删去
+        // 调用清空playground的html的api, empty()表示清空当前的html对象
+        this.$playground.empty(); 
+
+        // fireball射程有限，射程到后会自行清除，因此不用管
+
         this.$playground.hide();
     }
 }

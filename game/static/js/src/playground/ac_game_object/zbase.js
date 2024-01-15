@@ -44,6 +44,13 @@ class AcGameObject {
 
     }
 
+    // 仿照unity3D添加late_update函数，在每一帧的最后执行一次
+    // 即在所有ac game object的update执行完后，再去执行late_update
+    // 渲染胜/败就放入late_update中，就可以保证胜/败被渲染在所有图层的上面
+    late_update() {
+
+    }
+
     //一个物体被删除前还需要去恢复现场，比如某人被删除前需要给其对手加分
     //对象在被销毁前执行一次
     on_destroy() {
@@ -85,6 +92,13 @@ let AC_GAME_ANIMATION = function(timestamp) {   //timestrap为时间戳，这个
             obj.update();
         }
     }
+
+    // 调用late_update
+    for (let i = 0; i < AC_GAME_OBJECTS.length; i ++ ) {
+        let obj = AC_GAME_OBJECTS[i];
+        obj.late_update();
+    }
+    
     last_timestamp = timestamp; //更新last_timestamp
     
     requestAnimationFrame(AC_GAME_ANIMATION); //递归
