@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 import os
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,6 +33,10 @@ ALLOWED_HOSTS = ["8.208.32.123", "20.123.135.13", "localhost", "app5894.acapp.ac
 # Application definition
 
 INSTALLED_APPS = [
+    # django中想用jwt，必须先引入rest_framework，因为jwt被集成到了rest_framework中
+    # rest_framework帮我们实现了很多工具，能帮助我们实现api
+    'rest_framework',
+    'rest_framework_simplejwt', 
     'channels', # 加入django channels
     'game.apps.GameConfig', # 在settings.py中将写的app装进来
     'django.contrib.admin',
@@ -161,3 +166,45 @@ CHANNEL_LAYERS = {
 }
 
 ROOM_CAPCITY = 3 # 每个room的人数上限，暂定为3人，方便调试
+
+# REST_FRAMEWORK的配置，让REST_FRAMEWORK中的身份验证变成JWT的验证方式
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+# JWT的配置
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5), # access的有效期是5分钟
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14), # refresh的有效期是14天
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'UPDATE_LAST_LOGIN': False,
+
+    'ALGORITHM': 'HS256',
+    # SIGNING_KEY就是密钥（私钥），因此需要将SECRET_KEY改为一个随机字符串
+    # 此私钥不可泄漏，且最好定期更换，最好长一些
+    'SIGNING_KEY': "Jed567abfg45bnnjsiqlpoy",
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+    
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+    
+    'JTI_CLAIM': 'jti',
+    
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
