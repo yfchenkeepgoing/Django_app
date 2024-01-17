@@ -2,7 +2,8 @@
 export class AcGame {
     //构造函数，类似cpp中的构造函数或者python中的__init__函数
     //参数为id参见web.html
-    constructor(id, AcWingOS) {
+    // 两个额外的参数access和refresh
+    constructor(id, AcWingOS, access, refresh) {
         // 输出参数AcWingOS，观察其是什么，其本质是一个提供了很多api的对象
         // 通过这个参数可以判断我们是通过web去访问还是通过acapp去访问
         // console.log(AcWingOS) 
@@ -12,6 +13,10 @@ export class AcGame {
 
         // 记下AcWingOS
         this.AcWingOS = AcWingOS;
+
+        // 存下access和refresh
+        this.access = access;
+        this.refresh = refresh;
 
         // 创建settings/zbase.js中的class Settings
         this.settings = new Settings(this);

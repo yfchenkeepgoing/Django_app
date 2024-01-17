@@ -1,5 +1,5 @@
 # 本函数的作用：receive完code后要重定向到web端的根目录下
-from django.shortcuts import redirect
+from django.shortcuts import redirect, reverse # reverse可以将链接名称转换为链接
 # 引入redis
 from django.core.cache import cache
 # 请求链接的库
@@ -7,10 +7,10 @@ import requests
 # 取来存储于数据库中的所有用户的信息，避免重复存储用户信息
 from django.contrib.auth.models import User
 from game.models.player.player import Player
-# 用户需要登录
-from django.contrib.auth import login
 # 随机数
 from random import randint
+# 手动获取jwt所需要的包
+from rest_framework_simplejwt.tokens import RefreshToken
 
 def receive_code(request):
     data = request.GET
@@ -52,8 +52,12 @@ def receive_code(request):
     players = Player.objects.filter(openid=openid)
     # 若该用户已存在，则无需重新获取信息，直接登录即可
     if players.exists(): 
-        login(request, players[0].user) # login函数的统一用法
-        return redirect("index") # 重定向到主页
+        # login(request, players[0].user) # login函数的统一用法
+        refresh = RefreshToken.for_user(players[0].user)
+        # return redirect("index")
+        # 将access和refresh直接放入链接中返回给前端，因为是https协议，链接是加密的
+        # 若觉得不安全，可以先返回一个令牌给前端，前端拿到令牌后再向后端发送post请求，后端再返回access和refresh，比较麻烦
+        return redirect(reverse("index") + "?access=%s&refresh=%s" % (str(refresh.access_token), str(refresh))) 
     
     # 若用户不存在，则需要通过授权令牌和openid申请用户信息
     get_userinfo_url = "https://www.acwing.com/third_party/api/meta/identity/getinfo/"
@@ -79,10 +83,10 @@ def receive_code(request):
     player = Player.objects.create(user=user, photo=photo, openid=openid)
 
     # 根据新创建的用户信息登录
-    login(request, user)
-
-    # 重定向到主页
-    return redirect("index") 
+    # login(request, user)
+    refresh = RefreshToken.for_user(user)
+    # return redirect("index")
+    return redirect(reverse("index") + "?access=%s&refresh=%s" % (str(refresh.access_token), str(refresh))) 
 
 def receive_code_github(request):
     data = request.GET
@@ -136,8 +140,10 @@ def receive_code_github(request):
     players = Player.objects.filter(openid=userid)
     # 若该用户已存在，则无需重新获取信息，直接登录即可
     if players.exists(): 
-        login(request, players[0].user) # login函数的统一用法
-        return redirect("index") # 重定向到主页
+        # login(request, players[0].user) # login函数的统一用法
+        refresh = RefreshToken.for_user(players[0].user)
+        # return redirect("index") # 重定向到主页
+        return redirect(reverse("index") + "?access=%s&refresh=%s" % (str(refresh.access_token), str(refresh))) 
 
     # 根据用户信息完成注册
     # 游戏的用户名不可重复，但acwing的用户名可能和直接通过网站注册的用户名是重复的
@@ -151,8 +157,10 @@ def receive_code_github(request):
     player = Player.objects.create(user=user, photo=photo, openid=userid)
 
     # 根据新创建的用户信息登录
-    login(request, user)
+    # login(request, user)
+    refresh = RefreshToken.for_user(user)
+    # return redirect("index")
+    return redirect(reverse("index") + "?access=%s&refresh=%s" % (str(refresh.access_token), str(refresh))) 
 
-    return redirect("index")
 
 

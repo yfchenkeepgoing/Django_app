@@ -28,9 +28,11 @@
     <!-- 改用模块化的引用方式-->
     <script type="module"> //当我们需要某个名称时，只将这个名称引进来，而不是将所有内容都变为全局变量
         import {AcGame} from "{% static 'js/dist/game.js' %}"; //只会用到AcGame，引入方式类似python
-        //此时只会从上述js文件中载入一个名称AcGame，载入的AcGame也不会作为全局的全局变量
-        $(document).ready(function(){   
-            let ac_game = new AcGame("ac_game_12345678");  //传自div的id
+        // 此时只会从上述js文件中载入一个名称AcGame，载入的AcGame也不会作为全局的全局变量
+        $(document).ready(function(){
+        // null是参数AcWingOS的值，access和refresh来自views/index.py
+        // 双重大括号中间加变量名，即可将后端传来的信息渲染出来
+            let ac_game = new AcGame("ac_game_12345678", null, "{{ access }}", "{{ refresh }}");  //传自div的id
         });
     </script>
 </body>

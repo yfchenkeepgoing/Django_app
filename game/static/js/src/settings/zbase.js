@@ -187,7 +187,11 @@ class Settings {
         if (this.platform === "ACAPP") {
             this.getinfo_acapp();
         } else { // web端执行其相应的getinfo函数
-            this.getinfo_web();
+            if (this.root.access) { // 若有access，则服务器端直接返回请求的信息
+                this.getinfo_web();
+            } else { // 没有access，则登录
+                this.login(); 
+            }
             this.add_listening_events(); // 绑定监听函数
         }
     }
@@ -284,7 +288,6 @@ class Settings {
     // 在远程服务器上登录的函数，是一个ajax
     // 点击登录界面的登录按钮时登录，因此给这个按钮绑定一个触发函数
     login_on_remote() {
-        let outer = this;
         let username = this.$login_username.val(); // 取出login_username的值
         let password = this.$login_password.val(); // 取出login_password的值
         // 每次登录时，清空上一次的login_error_message
@@ -292,21 +295,22 @@ class Settings {
 
         // 调用服务器的登录函数
         $.ajax({
-            url: "https://app5894.acapp.acwing.com.cn/settings/login/",
-            type: "GET",
+            url: "https://app5894.acapp.acwing.com.cn/settings/token/", // 登录现在访问的是token链接
+            type: "post", // type由get改为post
             data: {
                 username: username,
                 password: password,
             },
-            success: function(resp) { // 返回值为后端传回来的一个字典，将其传入参数resp中
-                // console.log(resp) // 输出resp，看对不对
-                // 三等号用于比较
-                // 若登录成功，则刷新，在cookie中会记录已经登录成功，刷新页面后进入菜单界面
-                if (resp.result === "success") {
-                    location.reload(); 
-                } else {
-                    outer.$login_error_message.html(resp.result); // 登录失败则显示用户名或密码不正确       
-                }
+            // 成功获取令牌，则将令牌存储下来
+            success: resp => { 
+                console.log(resp); // 调试用
+                this.root.access = resp.access;
+                this.root.refresh = resp.refresh;
+                this.getinfo_web(); // 登录后获取用户的信息
+            },
+            // 若没有成功地获取到令牌，即用户名或密码错误，则需要展示用户信息
+            error: () => {
+                this.$login_error_message.html("用户名或密码错误");
             }
         });
     }
@@ -351,19 +355,11 @@ class Settings {
         if (this.platform === "ACAPP") {
             this.root.AcWingOS.api.window.close(); // yxc提供的关闭窗口的api
         } else {
-            // 若前端是web，则有如下的登出操作
-            $.ajax({
-                url: "https://app5894.acapp.acwing.com.cn/settings/logout/",
-                type: "GET",
-                // 退出不需要参数，因此不需要data
-                success: function(resp) {
-                    // console.log(resp); // 输出后端返回的结果，用于调试
-                    // 后端返回的resp的result必定为success
-                    if (resp.result === "success") {
-                        location.reload(); // 刷新页面
-                    }
-                }
-            });
+            // 直接删去内存中的令牌即可
+            this.root.access = "";
+            this.root.refresh = "";
+            // 重定向到首页
+            location.href = "/";
         }
     }
 
@@ -425,52 +421,33 @@ class Settings {
     // web端的getinfo函数：从服务器端获取用户信息（用户名和头像）的函数
     // 需要记住这是怎么写的，用ajax来写，ajax中传一个字典
     // 其中包括getinfo函数显示在网站端的完整路径，这是因为本项目不仅要跑在web端还要跑在acapp端
-    getinfo_web() {
-        let outer = this; 
+    getinfo_web() { 
         $.ajax({
             url: "https://app5894.acapp.acwing.com.cn/settings/getinfo/",
-            type: "GET", // 类型都默认为GET
-            // getinfo.py中需要什么数据，就传入什么数据
-            // getinfo.py:
-            // def getinfo(request):
-            // # 判断从哪个前端发送而来，传入参数platform，这个参数需要我们在前端自定义
-            // platform = request.GET.get('platform')
-            // if platform == "ACAPP":
-            //     return getinfo_acapp(request)
-            // elif platform = "WEB":
-            //     return getinfo_web(request)
+            type: "get", // get大小写皆可
             data: {
-                // 函数内部不宜直接用this，函数内部的this可能是函数本身，而非这个class本身
-                // 函数内部用this需要在函数外部定义: let outer = this; 
-                platform: outer.platform,
+                platform: this.platform,
             },
-
-            // 调用成功则返回success
-            // resp是getinfo.py中返回的值，由下面的代码可知
-            // # 返回信息
-            // return JsonResponse({
-            //     'result': "success", # 返回查询结果，成功则返回success，失败则返回理由
-            //     'username': player.user.username,
-            //     'photo': player.photo,
-            // })
-            // 返回值确切来说是一个字典(dict)，这个返回值会被传给参数resp，可以打印出来观察
-            success: function(resp) {
+            headers: {
+                // 在settings.py中定义了验证的域是Bearer('AUTH_HEADER_TYPES': ('Bearer',),)
+                'Authorization': "Bearer " + this.root.access,
+            },
+            success: resp => {
                 // console.log(resp); // 打印getinfo.py的返回值
                 // 若返回值为success，则应该打开菜单界面，隐藏登录界面（当前界面）
                 // 因此，本文件中也需要实现隐藏函数和显示函数
                 if (resp.result == "success") {
-                    // 将resp中的username和photo存入outer中
-                    outer.username = resp.username;
-                    outer.photo = resp.photo;
+                    console.log(resp); // 调试用
+                    this.username = resp.username;
+                    this.photo = resp.photo;
 
-                    outer.hide(); // 隐藏登录界面
-                    outer.root.menu.show(); // 打开菜单界面
+                    this.hide(); // 隐藏登录界面
+                    this.root.menu.show(); // 打开菜单界面
                 } 
 
                 // 若获取返回信息未成功，则应该弹出登录界面
                 else {
-                    outer.login(); // 弹出登录界面
-                    // outer.register(); // 展示注册界面
+                    this.login(); // 弹出登录界面
                 }
             }
         });
