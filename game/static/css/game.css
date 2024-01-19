@@ -275,6 +275,7 @@
     background-color: rgba(222,225,230, 0.2);
 }
 
+/*以下都是用于定义排行榜界面的格式的css代码*/
 .ac-game-rankings {
     background: #000; /* 完全不透明的黑色背景 */
     color: #fff; /* 白色文本 */

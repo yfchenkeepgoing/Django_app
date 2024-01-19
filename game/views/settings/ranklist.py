@@ -6,7 +6,7 @@ from game.models.player.player import Player
 
 # 本类继承自APIView
 class RanklistView(APIView):
-    # permission_classes = ([IsAuthenticated]) # 用于验证，需要我们进行授权
+    permission_classes = ([IsAuthenticated]) # 用于验证，需要我们进行授权
 
     # 按照数据库里的score返回排名前十的玩家
     def get(self, request):
