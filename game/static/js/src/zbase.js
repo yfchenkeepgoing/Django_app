@@ -28,6 +28,9 @@ export class AcGame {
         //创建游戏界面对象
         this.playground = new AcGamePlayground(this);
 
+        // 创建排行榜对象
+        this.rankings = new Rankings(this);
+
         this.start();
     }
 

@@ -12,6 +12,9 @@ from game.views.settings.getinfo import InfoView
 # 引用register.py种的register函数
 from game.views.settings.register import register
 
+# 引用views/settings/ranklist.py中的内容
+from game.views.settings.ranklist import RanklistView
+
 # 引入用于获取令牌和刷新令牌的包
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -25,5 +28,6 @@ urlpatterns = [
     # path("login/", signin, name="settings_login"), # signin函数的路由
     # path("logout/", signout, name="settings_logout"), # signout函数的路由
     path("register/", register, name="settings_register"), # register函数的路由
+    path("ranklist/", RanklistView.as_view(), name="settings_ranklist"), # ranklist.py中class转化为函数后的路由
     path("acwing/", include("game.urls.settings.acwing.index")), # 引用acwing/index.py
 ]

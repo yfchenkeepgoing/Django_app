@@ -15,15 +15,19 @@ class AcGameMenu{
 <div class="ac-game-menu">
         <div class="ac-game-menu-field">
             <div class="ac-game-menu-field-item ac-game-menu-field-item-single-mode">
-                单人模式
+                Single Player
             </div>
             <br>
             <div class="ac-game-menu-field-item ac-game-menu-field-item-multi-mode">
-                多人模式
+                Multi Player
+            </div>
+            <br>
+            <div class="ac-game-menu-field-item ac-game-menu-field-item-rankings">
+                Rankings
             </div>
             <br>
             <div class="ac-game-menu-field-item ac-game-menu-field-item-settings">
-                退出
+                Exit
             </div>
         </div>
 </div>
@@ -34,8 +38,9 @@ class AcGameMenu{
         // jquery中有find函数，可以在menu中找到某一个class对应的对象,注意class名前面要加上.，id前要加上#，这是jquery的语法
         this.$single_mode = this.$menu.find('.ac-game-menu-field-item-single-mode');  // single按钮
         this.$multi_mode = this.$menu.find('.ac-game-menu-field-item-multi-mode'); //multi按钮
+        this.$rankings = this.$menu.find('.ac-game-menu-field-item-rankings') // rankings按钮
         this.$settings = this.$menu.find('.ac-game-menu-field-item-settings'); //settings按钮
-
+        
         this.start(); //创建AcGameMenu的对象时自动调用start函数
     }
 
@@ -63,6 +68,13 @@ class AcGameMenu{
             // console.log("click multi mode"); //先不写函数，先输出一句话
             outer.hide(); // 关闭菜单页面
             outer.root.playground.show("multi mode");
+        });
+
+        // 当rankings按钮被点击时，会自动调用以下函数
+        this.$rankings.click(function(){
+            // console.log("click rankings"); // 调试用
+            outer.hide(); // 关闭菜单页面
+            outer.root.rankings.show();
         });
 
         //同理，当设置按钮被点击（click）时，会自动调用以下函数

@@ -79,7 +79,7 @@ class Player extends AcGameObject {
         this.playground.player_count ++ ;
 
         // 将notice_board上的已就绪人数渲染出来
-        this.playground.notice_board.write("已就绪: " + this.playground.player_count + "人");
+        this.playground.notice_board.write("Ready: " + this.playground.player_count + " Players");
 
         // 已就绪人数大于等于3，则状态变为fighting，各个player可以开始移动同时发射fireball
         if (this.playground.player_count >= 3) {

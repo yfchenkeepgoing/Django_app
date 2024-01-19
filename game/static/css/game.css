@@ -207,7 +207,7 @@
     text-align: center; /*居中，默认情况下为左对齐*/
     background-color: rgba(39, 21, 28, 0.6); /*按钮的背景颜色，前三项是rgb，最后一项是透明度*/
     border-radius: 10px; /*每个角圆弧的半径，数值越大则边角越圆，如果不设置则边角为直角，此处设置为10px*/
-    letter-spacing: 0.5vw; /*控制两个字之间的宽度，此处字间距是0.5%的页面宽度*/
+    letter-spacing: 0.2vw; /*控制两个字之间的宽度，此处字间距是0.5%的页面宽度*/
     cursor: pointer; /*cursor：光标，pointer：小手，放在按钮上时，鼠标应该从指针变成手掌的形状*/
 }
 
@@ -275,4 +275,57 @@
     background-color: rgba(222,225,230, 0.2);
 }
 
+.ac-game-rankings {
+    background: #000; /* 完全不透明的黑色背景 */
+    color: #fff; /* 白色文本 */
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); /* 白色阴影，如果需要 */
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    font-size: 5vh; /*字体大小先设为3%的高度，后续可以调整*/
+    padding-top: 8vw; /* 设置顶部内边距为视口宽度的10% */
+}
 
+.rankings-title,
+.ranking-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rankings-header,
+.rankings-username,
+.rankings-score,
+.rankings-rank {
+    flex: 1;
+    text-align: center;
+    color: #fff; /* 确保这些元素的文本颜色为白色 */
+}
+
+.rankings-header {
+    font-weight: bold;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #fff; /* 白色边框 */
+}
+
+.rankings-return {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #333; /* 按钮背景设置为深灰色，如果您想要黑色按钮，这里可以改为 #000 */
+    color: #fff; /* 按钮文本颜色为白色 */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 4vh; /*字体大小先设为3%的高度，后续可以调整*/
+}
+
+.rankings-return:hover {
+    transform: scale(1.2); /* 鼠标悬浮在按钮上时按钮的大小扩大为原来的1.2倍 */
+    transition: 100ms; /* 设置鼠标悬浮时大小变化的过渡时间 */
+}

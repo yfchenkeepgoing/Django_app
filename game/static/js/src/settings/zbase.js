@@ -22,24 +22,24 @@ class Settings {
     <div class="ac-game-settings-login">
 
         <div class="ac-game-settings-title">
-            登录
+            Login
         </div>
 
         <div class="ac-game-settings-username">
             <div class="ac-game-settings-item">
-                <input type="text" placeholder="用户名">
+                <input type="text" placeholder="Username">
             </div>
         </div>
 
         <div class="ac-game-settings-password">
             <div class="ac-game-settings-item">
-                <input type="password" placeholder="密码">
+                <input type="password" placeholder="Password">
             </div> 
         </div>
 
         <div class="ac-game-settings-submit">
             <div class="ac-game-settings-item">
-                <button>登录</button>
+                <button>Login</button>
             </div>
         </div>
 
@@ -47,7 +47,7 @@ class Settings {
         </div>
 
         <div class="ac-game-settings-option">
-            注册
+            Register
         </div>
 
         <br>
@@ -55,7 +55,7 @@ class Settings {
             <img width="30" src="https://app5894.acapp.acwing.com.cn/static/image/settings/third_party_login_logo.png">
             <br>
             <div>
-                AcWing一键登录
+                AcWing One-click Login
             </div>
         </div>
 
@@ -64,7 +64,7 @@ class Settings {
             <img width="30" src="https://app5894.acapp.acwing.com.cn/static/image/settings/github_login_logo.png">
             <br>
             <div>
-                GitHub一键登录
+                GitHub One-click Login
             </div>
         </div>
 
@@ -73,30 +73,30 @@ class Settings {
     <div class="ac-game-settings-register">
     
         <div class="ac-game-settings-title">
-            注册
+            Register
         </div>
 
         <div class="ac-game-settings-username">
             <div class="ac-game-settings-item">
-                <input type="text" placeholder="用户名">
+                <input type="text" placeholder="Username">
             </div>
         </div>
 
         <div class="ac-game-settings-password ac-game-settings-password-first">
             <div class="ac-game-settings-item">
-                <input type="password" placeholder="密码">
+                <input type="password" placeholder="Password">
             </div> 
         </div>
 
         <div class="ac-game-settings-password ac-game-settings-password-second">
             <div class="ac-game-settings-item">
-                <input type="password" placeholder="确认密码">
+                <input type="password" placeholder="Confirm Password">
             </div> 
         </div>
 
         <div class="ac-game-settings-submit">
             <div class="ac-game-settings-item">
-                <button>注册</button>
+                <button>Register</button>
             </div>
         </div>
 
@@ -104,7 +104,7 @@ class Settings {
         </div>
 
         <div class="ac-game-settings-option">
-            登录
+            Login
         </div>
 
         <br>
@@ -112,7 +112,7 @@ class Settings {
             <img width="30" src="https://app5894.acapp.acwing.com.cn/static/image/settings/third_party_login_logo.png">
             <br>
             <div>
-                AcWing一键登录
+                AcWing One-click Login
             </div>
         </div>
 
@@ -121,7 +121,7 @@ class Settings {
             <img width="30" src="https://app5894.acapp.acwing.com.cn/static/image/settings/github_login_logo.png">
             <br>
             <div>
-                GitHub一键登录
+                GitHub One-click Login
             </div>
         </div>
 
@@ -189,11 +189,48 @@ class Settings {
         } else { // web端执行其相应的getinfo函数
             if (this.root.access) { // 若有access，则服务器端直接返回请求的信息
                 this.getinfo_web();
+                this.refresh_jwt_access_token(); // 有access，则直接刷新之
             } else { // 没有access，则登录
                 this.login(); 
             }
             this.add_listening_events(); // 绑定监听函数
         }
+    }
+
+    // 自动刷新access的逻辑
+    refresh_jwt_access_token() {
+        setInterval(() => {
+            $.ajax({
+                // url参见urls/settings/index.py
+                url: "https://app5894.acapp.acwing.com.cn/settings/token/refresh/", 
+                type: "post", // 参加上面的页面
+                // 传入refresh token
+                data: {
+                    refresh: this.root.refresh,
+                },
+                // 不需要做验证，直接返回即可
+                success: resp => {
+                    this.root.access = resp.access; // 更新access
+                    console.log(resp); // 调试用
+                }
+            });
+        }, 4.5 * 60 * 1000); // 调试时每4.5分钟刷新一次access_token, acess_token有效期5分钟，加上一点提前量
+
+        // 登录成功后，5秒钟后自动返回按score排序的前十名玩家
+        // 暂且不实现前端
+        setTimeout(() => {
+            $.ajax({
+                url: "https://app5894.acapp.acwing.com.cn/settings/ranklist/",
+                type: "get",
+                // 因为ranklist.py中需要验证，所以要加上header
+                headers: {
+                    'Authorization': "Bearer " + this.root.access,
+                },
+                success: resp => {
+                    console.log(resp); // 输出到控制台查看
+                }
+            });
+        }, 5000);
     }
 
     // 写一个专门的函数来绑定事件，其中包含登录界面的监听函数和注册界面的监听函数
@@ -306,6 +343,7 @@ class Settings {
                 console.log(resp); // 调试用
                 this.root.access = resp.access;
                 this.root.refresh = resp.refresh;
+                this.refresh_jwt_access_token(); // 登录成功后刷新access
                 this.getinfo_web(); // 登录后获取用户的信息
             },
             // 若没有成功地获取到令牌，即用户名或密码错误，则需要展示用户信息

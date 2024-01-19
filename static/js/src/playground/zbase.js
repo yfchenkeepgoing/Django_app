@@ -150,6 +150,14 @@ class AcGamePlayground {
                 outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
             };
         }
+        else if (mode === "rankings") {
+            this.$playground.hide();
+
+            if (!this.root.rankings) {
+                this.root.rankings = new Rankings(this);
+            }
+            this.root.rankings.show();
+        }
     }
 
     hide() {  // 关闭playground界面

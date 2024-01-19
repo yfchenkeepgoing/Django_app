@@ -6,7 +6,7 @@ class NoticeBoard extends AcGameObject {
 
         this.playground = playground;
         this.ctx = this.playground.game_map.ctx; // 渲染则需要ctx
-        this.text = "已就绪: 0人"; // 初始显示的文本
+        this.text = "Ready: 0 Players"; // 初始显示的文本
     }
 
     // 这也是一个ac game object，故也需要实现start和update函数
