@@ -288,7 +288,7 @@
     transform: translate(-50%, -50%);
     width: 100%;
     height: 100%;
-    font-size: 5vh; /*字体大小先设为3%的高度，后续可以调整*/
+    font-size: 4vh; /*字体大小先设为3%的高度，后续可以调整*/
     padding-top: 8vw; /* 设置顶部内边距为视口宽度的10% */
 }
 

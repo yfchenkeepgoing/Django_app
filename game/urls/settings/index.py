@@ -9,8 +9,8 @@ from game.views.settings.getinfo import InfoView
 # 引用logout.py中的signout函数
 # from game.views.settings.logout import signout
 
-# 引用register.py种的register函数
-from game.views.settings.register import register
+# 引用register.py种的PlayerView类
+from game.views.settings.register import PlayerView
 
 # 引用views/settings/ranklist.py中的内容
 from game.views.settings.ranklist import RanklistView
@@ -27,7 +27,7 @@ urlpatterns = [
     path("getinfo/", InfoView.as_view(), name="settings_getinfo"), # getinfo函数的路由, as_view会将class写法变为函数写法
     # path("login/", signin, name="settings_login"), # signin函数的路由
     # path("logout/", signout, name="settings_logout"), # signout函数的路由
-    path("register/", register, name="settings_register"), # register函数的路由
+    path("register/", PlayerView.as_view(), name="settings_register"), # # register函数的路由, as_view会将class写法变为函数写法
     path("ranklist/", RanklistView.as_view(), name="settings_ranklist"), # ranklist.py中class转化为函数后的路由
     path("acwing/", include("game.urls.settings.acwing.index")), # 引用acwing/index.py
 ]

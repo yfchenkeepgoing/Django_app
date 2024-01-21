@@ -324,9 +324,11 @@ class Settings {
 
     // 在远程服务器上登录的函数，是一个ajax
     // 点击登录界面的登录按钮时登录，因此给这个按钮绑定一个触发函数
-    login_on_remote() {
-        let username = this.$login_username.val(); // 取出login_username的值
-        let password = this.$login_password.val(); // 取出login_password的值
+    login_on_remote(username, password) {
+        // 若传入了username和password，就用传入的username和password，若没有传入，则获取输入框中的值
+        // 短路写法，前者不为空则返回前者，否则返回后者
+        username = username || this.$login_username.val(); 
+        password = password || this.$login_password.val(); 
         // 每次登录时，清空上一次的login_error_message
         this.$login_error_message.empty();
 
@@ -354,8 +356,8 @@ class Settings {
     }
 
     // 在远程服务器上注册的函数
+    // 改用箭头函数，不再需要outer
     register_on_remote() {
-        let outer = this;
         let username = this.$register_username.val();
         let password = this.$register_password.val();
         let password_confirm = this.$register_password_confirm.val();
@@ -364,23 +366,26 @@ class Settings {
 
         $.ajax({
             url: "https://app5894.acapp.acwing.com.cn/settings/register/",
-            type: "GET", // 按理来说应该用POST，凡是改数据库都要用POST, 此处为方便调试用GET
+            type: "post", // GET改为POST，与后端register.py中的方法对应
             data: {
-                username: username,
-                password: password,
-                password_confirm: password_confirm,
+                // js中简写：若key和value名称相同，则写其中一个即可
+                username,
+                password,
+                password_confirm,
             },
 
             // 回调函数，后端返回的字典被传入resp种
-            success: function(resp) {
+            success: resp => {
                 // console.log(resp); // 输出结果，便于调试
                 // 判断是否成功
                 if (resp.result === "success") {
-                    // 刷新页面，注册成功后刷新页面就进入登录状态，打开菜单，因为register.py中有login
-                    location.reload(); 
+                    // // 刷新页面，注册成功后刷新页面就进入登录状态，打开菜单，因为register.py中有login
+                    // location.reload(); 
+                    // 改写后的register函数不自带登录功能，但若让register.py中增加返回一个jwt的代码，就自带了登录功能
+                    this.login_on_remote(username, password); // 注册成功，则登录
                 } else {
                     // 否则直接将错误信息通过error message展现出来
-                    outer.$register_error_message.html(resp.result);
+                    this.$register_error_message.html(resp.result);
                 }
             }
         });
@@ -419,25 +424,29 @@ class Settings {
 
     // 发起授权的函数
     acapp_login(appid, redirect_uri, scope, state) {
-        let outer = this;
-
         // 请求授权码的API
         // 标准格式AcWingOS.api.oauth2.authorize(appid, redirect_uri, scope, state, callback)
         // 其中callback需要自定义一个函数来实现，其返回值是resp
         // resp是redirect_uri的返回值，redirect_uri就是receive_code函数
         // 因此resp是receive_code函数的返回值。返回值为用户名和头像（有待实现）
-        this.root.AcWingOS.api.oauth2.authorize(appid, redirect_uri, scope, state, function(resp) {
+        this.root.AcWingOS.api.oauth2.authorize(appid, redirect_uri, scope, state, resp => {
             // console.log("called from acapp_login function"); // 方便显示下面的输出的来源
             // console.log(resp); // 输出，看返回结果是否正确
             if (resp.result === "success") {
                 // 成功获取用户名和头像，后面和web端的getinfo函数逻辑相同
-                outer.username = resp.username;
-                outer.photo = resp.photo;
-                outer.hide(); // 隐藏当前的settings页面
-                outer.root.menu.show(); // 显示菜单界面
+                this.username = resp.username;
+                this.photo = resp.photo;
+                this.hide(); // 隐藏当前的settings页面
+                this.root.menu.show(); // 显示菜单界面
+                // console.log(resp); // 调试用，看是否会输出access和refresh
+                // 存下access和refresh
+                this.root.access = resp.access;
+                this.root.refresh = resp.refresh;
+                // 调用刷新函数，每隔4.5分钟刷新一次access令牌
+                // 刷新函数中隐藏了打印前十名信息的代码，因此若获取access成功则控制台会打印出前十名的信息
+                this.refresh_jwt_access_token();
             }
         });
-
     }
 
     // acapp端的getinfo函数，因为acapp端一定没有登录，所以需要单独写

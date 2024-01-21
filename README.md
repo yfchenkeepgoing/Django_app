@@ -1,5 +1,5 @@
 ## Game based on Django framework, developed by yifanChen
-### website
+### Website
 https://app5894.acapp.acwing.com.cn/
 ### Gameplay
 1. Right-click to move

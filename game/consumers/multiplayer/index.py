@@ -20,9 +20,15 @@ class MultiPlayer(AsyncWebsocketConsumer):
 
     # 第一个函数：连接
     async def connect(self):
-        # 前端执行this.ws = new WebSocket("wss://app5894.acapp.acwing.com.cn/wss/multiplayer/");
-        # 调用以下函数，会成功创建连接
-        await self.accept()
+        # 取出user
+        user = self.scope['user']
+        print(user, user.is_authenticated) # 调试用
+        # 若用户已经登录，则同意链接；若用户未登录，则关闭链接
+        if user.is_authenticated:
+            await self.accept()
+        else:
+            await self.close()
+
     
     # 第二个函数：断开连接
     # 当前端断开连接（刷新/自行close）时，就会调用以下函数
@@ -32,7 +38,8 @@ class MultiPlayer(AsyncWebsocketConsumer):
     # 用户离线但不会执行以下函数的特殊情况：用户电脑断电，无法发送请求，也就无法执行以下函数
     async def disconnect(self, close_code):
         # 若room_name不为空，则断联后需要将该room从组里删去
-        if self.room_name:
+        # 需要判断self中是否存在room_name，python3中有函数可以判断某个对象是否存在某个属性
+        if hasattr(self, 'room_name') and self.room_name:
             await self.channel_layer.group_discard(self.room_name, self.channel_name)
 
     # async：异步函数

@@ -5,7 +5,9 @@ class MultiPlayerSocket {
 
         // 建立wss的连接，连接地址为项目的域名，并将其中的https改为wss，在域名后面添加routing.py中的wss/multiplayer/
         // 注意若routing.py中以\结尾，则下面也需要以\结尾，ws协议的书写规范比http协议要求更为严格
-        this.ws = new WebSocket("wss://app5894.acapp.acwing.com.cn/wss/multiplayer/");
+        // 需要在建立ws连接时向channelsmiddleware.py中传递token参数，参见channelsmiddleware.py中的
+        // token = parse_qs(scope["query_string"].decode("utf8"))["token"][0]
+        this.ws = new WebSocket("wss://app5894.acapp.acwing.com.cn/wss/multiplayer/?token=" + playground.root.access);
 
         this.start(); // 调用start函数
     }

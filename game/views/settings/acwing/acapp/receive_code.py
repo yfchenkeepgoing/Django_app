@@ -13,6 +13,7 @@ from game.models.player.player import Player
 from random import randint
 # JsonResponse
 from django.http import JsonResponse
+from rest_framework_simplejwt.tokens import RefreshToken
 
 def receive_code(request):
     data = request.GET
@@ -80,10 +81,13 @@ def receive_code(request):
         # return redirect("index") # 重定向到主页
         # 直接返回用户的用户名和头像
         player = players[0]
+        refresh = RefreshToken.for_user(player.user) # 生成refresh令牌
         return JsonResponse({
             'result': "success",
             'username': player.user.username, # 注意此处，别写成player.username
             'photo': player.photo,
+            'access': str(refresh.access_token), # 返回access令牌
+            'refresh': str(refresh), # 返回refresh令牌
         })
     
     # 若用户不存在，则需要通过授权令牌和openid申请用户信息
@@ -109,6 +113,8 @@ def receive_code(request):
     # 在用户的基础上创建玩家, create完后会自动保存到数据库中
     player = Player.objects.create(user=user, photo=photo, openid=openid)
 
+    refresh = RefreshToken.for_user(user)
+
     # 根据新创建的用户信息登录
     # login(request, user)
 
@@ -120,6 +126,8 @@ def receive_code(request):
         'result': "success",
         'username': player.user.username, # 注意此处，别写成player.username
         'photo': player.photo,
+        'access': str(refresh.access_token), # 返回access令牌
+        'refresh': str(refresh), # 返回refresh令牌
     })
 
 
