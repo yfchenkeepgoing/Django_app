@@ -16,8 +16,8 @@ https://app5894.acapp.acwing.com.cn/
 6. Authentication: JWT
 ### Features
 1. Complete menu interface and game interface
-2. Frontend and backend separation, with ACApp and Web versions on the frontend
-3. Deployed with Nginx to interface with the ACApp
+2. Frontend and backend separation, with AcApp and Web versions on the frontend
+3. Deployed with Nginx to interface with the AcApp
 4. Comprehensive account system, username and password login, and one-click login with AcWing & GitHub OAuth
 5. Online multiplayer and chat system implemented via WSS protocol
 6. Matchmaking system implemented through Thrift service

@@ -290,6 +290,7 @@
     height: 100%;
     font-size: 4vh; /*字体大小先设为3%的高度，后续可以调整*/
     padding-top: 8vw; /* 设置顶部内边距为视口宽度的10% */
+    overflow-y: auto; /* 在需要时显示垂直滚动条 */
 }
 
 .rankings-title,
