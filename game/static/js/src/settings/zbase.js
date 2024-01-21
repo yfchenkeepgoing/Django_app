@@ -211,7 +211,7 @@ class Settings {
                 // 不需要做验证，直接返回即可
                 success: resp => {
                     this.root.access = resp.access; // 更新access
-                    console.log(resp); // 调试用
+                    // console.log(resp); // 调试用
                 }
             });
         }, 4.5 * 60 * 1000); // 调试时每4.5分钟刷新一次access_token, acess_token有效期5分钟，加上一点提前量
@@ -227,7 +227,7 @@ class Settings {
                     'Authorization': "Bearer " + this.root.access,
                 },
                 success: resp => {
-                    console.log(resp); // 输出到控制台查看
+                    // console.log(resp); // 输出到控制台查看
                 }
             });
         }, 5000);
@@ -342,7 +342,7 @@ class Settings {
             },
             // 成功获取令牌，则将令牌存储下来
             success: resp => { 
-                console.log(resp); // 调试用
+                // console.log(resp); // 调试用
                 this.root.access = resp.access;
                 this.root.refresh = resp.refresh;
                 this.refresh_jwt_access_token(); // 登录成功后刷新access
@@ -484,7 +484,7 @@ class Settings {
                 // 若返回值为success，则应该打开菜单界面，隐藏登录界面（当前界面）
                 // 因此，本文件中也需要实现隐藏函数和显示函数
                 if (resp.result == "success") {
-                    console.log(resp); // 调试用
+                    // console.log(resp); // 调试用
                     this.username = resp.username;
                     this.photo = resp.photo;
 

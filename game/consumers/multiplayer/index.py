@@ -22,7 +22,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
     async def connect(self):
         # 取出user
         user = self.scope['user']
-        print(user, user.is_authenticated) # 调试用
+        # print(user, user.is_authenticated) # 调试用
         # 若用户已经登录，则同意链接；若用户未登录，则关闭链接
         if user.is_authenticated:
             await self.accept()
